@@ -46,7 +46,15 @@ contract LandRegistry is ERC721 {
 
     uint256 public proposalCount;
 
+    event ProposalCreated(uint256 plotId, uint256 proposalId);
+    event ProposalApproved(uint256 plotId, uint256 proposalId, address approver);
+    event ProposalExecuted(uint256 plotId, uint256 proposalId);
+
     constructor() ERC721("TrustEstate", "TE") {}
+
+    function getPlot(uint256 id) external view returns (Plot memory) {
+        return plots[id];
+    }
 
     // Mint a new plot of land with initial ownership
     function mintPlot(
@@ -88,9 +96,11 @@ contract LandRegistry is ERC721 {
         proposal.proposalType = proposalType;
         proposal.proposalData = proposalData;
         proposal.executed = false;
+
+        emit ProposalCreated(plotId, proposalCount);
     }
 
-    function approveProposal(uint256 proposalId) internal {
+    function approveProposal(uint256 proposalId) external {
         Proposal storage proposal = proposals[proposalId];
 
         require(!proposal.executed, "Proposal already executed");
@@ -99,6 +109,8 @@ contract LandRegistry is ERC721 {
 
         proposal.approvals[msg.sender] = true;
         proposal.approvers.push(msg.sender);
+
+        emit ProposalApproved(proposal.plotId, proposalId, msg.sender);
     }
 
     function executeProposal(uint256 proposalId) external {
@@ -123,6 +135,8 @@ contract LandRegistry is ERC721 {
             revert("Invalid proposal type");
         }
         proposal.executed = true;
+
+        emit ProposalExecuted(proposal.plotId, proposalId);
     }
 
     // Execute a proposal
