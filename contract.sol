@@ -9,11 +9,18 @@ contract LandRegistry is ERC721 {
         uint256 share; // Ownership share as a percentage (scaled by 10^4 for precision)
     }
 
-    struct SplitProposal {
-        uint256 plotId;          // Plot ID for action
-        address[] approvers;      // List of owners who approved
+    enum ProposalType { Split, Merge }
+
+    struct Proposal {
+        uint256 plotId;              // Plot ID for action
+        address[] approvers;         // List of owners who approved
         mapping(address => bool) approvals; // Tracks approvals
-        bool executed;            // Whether the action is executed
+        ProposalType proposalType;   // Type of proposal (e.g., Split, Merge)
+        bool executed;               // Whether the action is executed
+        bytes proposalData;          // Encoded data specific to the proposal type
+    }
+
+    struct SplitProposalData {
         PlotDetails split1;      // Split data for the action
         PlotDetails split2;      // Split data for the action
     }
@@ -33,10 +40,9 @@ contract LandRegistry is ERC721 {
     }
 
     mapping(uint256 => Plot) public plots; // Token ID => Owners and shares
-
     uint256 public plotCount;
 
-    mapping(uint256 => SplitProposal) public splitProposals;     // Proposal ID => Proposal
+    mapping(uint256 => Proposal) public proposals; //  Proposal ID => Proposal
 
     uint256 public proposalCount;
 
@@ -58,25 +64,34 @@ contract LandRegistry is ERC721 {
         _mintPlot(plot);
     }
 
-    // Create a proposal for splitting/merging
-    function createProposalSplit(
+    // Create a proposal for splitting
+    function createSplitProposal(
         uint256 plotId,
         PlotDetails memory split1,
         PlotDetails memory split2
     ) external {
         require(_isOwner(plotId, msg.sender), "Not an owner");
 
-        proposalCount++;
-        SplitProposal storage proposal = splitProposals[proposalCount];
-        proposal.plotId = plotId;
-        proposal.executed = false;
-        proposal.split1 = split1;
-        proposal.split2 = split2;
+        SplitProposalData memory splitData = SplitProposalData({ split1: split1, split2: split2 });
+        bytes memory encodedData = abi.encode(splitData);
+
+        _createProposal(plotId, ProposalType.Split, encodedData);
     }
 
-    // Approve a proposal
-    function approveProposalSplit(uint256 proposalId) external {
-        SplitProposal storage proposal = splitProposals[proposalId];
+
+    function _createProposal(uint256 plotId, ProposalType proposalType, bytes memory proposalData) internal {
+        require(_isOwner(plotId, msg.sender), "Not an owner");
+
+        proposalCount++;
+        Proposal storage proposal = proposals[proposalCount];
+        proposal.plotId = plotId;
+        proposal.proposalType = proposalType;
+        proposal.proposalData = proposalData;
+        proposal.executed = false;
+    }
+
+    function approveProposal(uint256 proposalId) internal {
+        Proposal storage proposal = proposals[proposalId];
 
         require(!proposal.executed, "Proposal already executed");
         require(_isOwner(proposal.plotId, msg.sender), "Not an owner");
@@ -86,9 +101,8 @@ contract LandRegistry is ERC721 {
         proposal.approvers.push(msg.sender);
     }
 
-    // Execute a proposal
-    function executeProposalSplit(uint256 proposalId) external {
-        SplitProposal storage proposal = splitProposals[proposalId];
+    function executeProposal(uint256 proposalId) external {
+        Proposal storage proposal = proposals[proposalId];
         require(!proposal.executed, "Proposal already executed");
 
         uint256 sumOfOwnerShares = 0;
@@ -99,14 +113,27 @@ contract LandRegistry is ERC721 {
         }
 
         require(sumOfOwnerShares == plots[proposal.plotId].totalShares, "Not all owners have approved");
+
+        if (proposal.proposalType == ProposalType.Split) {
+            SplitProposalData memory splitData = abi.decode(proposal.proposalData, (SplitProposalData));
+            _executeProposalSplit(proposal.plotId, splitData);
+        } else if (proposal.proposalType == ProposalType.Merge) {
+            revert("Not implemented");
+        } else {
+            revert("Invalid proposal type");
+        }
         proposal.executed = true;
-
-        _mintPlot(proposal.split1);
-        _mintPlot(proposal.split2);
-
-        _burn(proposal.plotId);
-        delete plots[proposal.plotId]
     }
+
+    // Execute a proposal
+    function _executeProposalSplit(uint256 plotId, SplitProposalData memory splitData) internal {
+        _mintPlot(splitData.split1);
+        _mintPlot(splitData.split2);
+
+        _burn(plotId);
+        delete plots[plotId];
+    }
+
 
     // Internal helper to mint a new plot
     function _mintPlot(PlotDetails memory plotDetails) internal {
