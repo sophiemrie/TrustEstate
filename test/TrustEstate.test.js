@@ -1,9 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-// Test suite for LandRegistry contract
-describe("LandRegistry", function () {
-  let LandRegistry;
+// Test suite for TrustEstate contract
+describe("TrustEstate", function () {
+  let TrustEstate;
   let landRegistry;
   let owner;
   let addr1;
@@ -12,9 +12,9 @@ describe("LandRegistry", function () {
 
   beforeEach(async function () {
     // Deploy the contract before each test
-    LandRegistry = await ethers.getContractFactory("LandRegistry");
+    TrustEstate = await ethers.getContractFactory("TrustEstate");
     [owner, addr1, addr2, addr3] = await ethers.getSigners();
-    landRegistry = await LandRegistry.deploy();
+    landRegistry = await TrustEstate.deploy();
     await landRegistry.waitForDeployment();
   });
 

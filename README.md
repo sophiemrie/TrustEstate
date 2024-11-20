@@ -6,5 +6,5 @@ Repository for our Blockchain project "TrustEstate"
 
 ```bash
 npm install
-npx hardhat test
+npm test
 ```

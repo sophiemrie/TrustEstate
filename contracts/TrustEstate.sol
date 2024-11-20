@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract LandRegistry is ERC721 {
+contract TrustEstate is ERC721 {
     struct Ownership {
         address owner;
         uint256 share; // Ownership share as a percentage (scaled by 10^4 for precision)
