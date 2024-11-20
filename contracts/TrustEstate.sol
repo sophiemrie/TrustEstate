@@ -9,7 +9,7 @@ contract TrustEstate is ERC721 {
         uint256 share; // Ownership share as a percentage (scaled by 10^4 for precision)
     }
 
-    enum ProposalType { Split, Merge }
+    enum ProposalType { Split, Merge, Transfer }
 
     struct Proposal {
         uint256 plotId;              // Plot ID for action
@@ -32,6 +32,10 @@ contract TrustEstate is ERC721 {
         uint256 plotId2;
     }
 
+    struct TransferProposalData {
+        PlotDetails transfer;
+    }
+
     struct PlotDetails {
         address[] owners;
         uint256[] shares;
@@ -44,6 +48,7 @@ contract TrustEstate is ERC721 {
         Ownership[] owners; // List of owners and their shares
         string ipfsHash; // Hash of geospatial data stored on IPFS
         uint256 totalShares; // Total shares available for the land (e.g., 100 shares)
+        bool allowIndividualTransfer; // Whether or not the land can be sold individually
     }
 
     mapping(uint256 => Plot) public plots; // Token ID => Owners and shares
@@ -108,6 +113,13 @@ contract TrustEstate is ERC721 {
         _createProposal(plotId1, ProposalType.Merge, hasToApprove, encodedData);
     }
 
+    function createTransferProposal(uint256 plotId, PlotDetails memory transfer) external {
+        require(_isOwner(plotId, msg.sender), "Not an owner");
+
+        TransferProposalData memory transferData = TransferProposalData({ transfer: transfer });
+        bytes memory encodedData = abi.encode(transferData);
+        _createProposal(plotId, ProposalType.Transfer, _getOwners(plotId), encodedData);
+    }
 
     function _createProposal(uint256 plotId, ProposalType proposalType, address[] memory hasToApprove, bytes memory proposalData) internal {
         require(_isOwner(plotId, msg.sender), "Not an owner");
@@ -152,6 +164,9 @@ contract TrustEstate is ERC721 {
         } else if (proposal.proposalType == ProposalType.Merge) {
             MergeProposalData memory mergeData = abi.decode(proposal.proposalData, (MergeProposalData));
             _executeProposalMerge(mergeData);
+        } else if (proposal.proposalType == ProposalType.Transfer) {
+            TransferProposalData memory transferData = abi.decode(proposal.proposalData, (TransferProposalData));
+            _executeProposalTransfer(proposal.plotId, transferData);
         } else {
             revert("Invalid proposal type");
         }
@@ -176,6 +191,11 @@ contract TrustEstate is ERC721 {
         delete plots[mergeData.plotId2];
     }
 
+    function _executeProposalTransfer(uint256 plotId, TransferProposalData memory transfer) internal {
+        _mintPlot(transfer.transfer);
+        _burn(plotId);
+        delete plots[plotId];
+    }
 
     // Internal helper to mint a new plot
     function _mintPlot(PlotDetails memory plotDetails) internal {
