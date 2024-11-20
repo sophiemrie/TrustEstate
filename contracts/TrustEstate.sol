@@ -13,6 +13,7 @@ contract TrustEstate is ERC721 {
 
     struct Proposal {
         uint256 plotId;              // Plot ID for action
+        address[] hasToApprove;         // List of people who have to approve
         address[] approvers;         // List of owners who approved
         mapping(address => bool) approvals; // Tracks approvals
         ProposalType proposalType;   // Type of proposal (e.g., Split, Merge)
@@ -23,6 +24,12 @@ contract TrustEstate is ERC721 {
     struct SplitProposalData {
         PlotDetails split1;      // Split data for the action
         PlotDetails split2;      // Split data for the action
+    }
+
+    struct MergeProposalData {
+        PlotDetails merge;  // Merged plot data
+        uint256 plotId1;
+        uint256 plotId2;
     }
 
     struct PlotDetails {
@@ -72,7 +79,6 @@ contract TrustEstate is ERC721 {
         _mintPlot(plot);
     }
 
-    // Create a proposal for splitting
     function createSplitProposal(
         uint256 plotId,
         PlotDetails memory split1,
@@ -83,11 +89,27 @@ contract TrustEstate is ERC721 {
         SplitProposalData memory splitData = SplitProposalData({ split1: split1, split2: split2 });
         bytes memory encodedData = abi.encode(splitData);
 
-        _createProposal(plotId, ProposalType.Split, encodedData);
+        address[] memory hasToApprove = _getOwners(plotId);
+
+        _createProposal(plotId, ProposalType.Split, hasToApprove, encodedData);
+    }
+
+    function createMergeProposal(uint256 plotId1, uint256 plotId2, PlotDetails memory merge) external {
+        require(_isOwner(plotId1, msg.sender) || _isOwner(plotId2, msg.sender), "Not an owner");
+
+        MergeProposalData memory mergeData = MergeProposalData({ merge: merge, plotId1: plotId1, plotId2: plotId2 });
+        bytes memory encodedData = abi.encode(mergeData);
+
+        address[] memory owners1 = _getOwners(plotId1);
+        address[] memory owners2 = _getOwners(plotId2);
+
+        address[] memory hasToApprove = _mergeUnique(owners1, owners2);
+
+        _createProposal(plotId1, ProposalType.Merge, hasToApprove, encodedData);
     }
 
 
-    function _createProposal(uint256 plotId, ProposalType proposalType, bytes memory proposalData) internal {
+    function _createProposal(uint256 plotId, ProposalType proposalType, address[] memory hasToApprove, bytes memory proposalData) internal {
         require(_isOwner(plotId, msg.sender), "Not an owner");
 
         proposalCount++;
@@ -95,6 +117,7 @@ contract TrustEstate is ERC721 {
         proposal.plotId = plotId;
         proposal.proposalType = proposalType;
         proposal.proposalData = proposalData;
+        proposal.hasToApprove = hasToApprove;
         proposal.executed = false;
 
         emit ProposalCreated(plotId, proposalCount);
@@ -104,7 +127,7 @@ contract TrustEstate is ERC721 {
         Proposal storage proposal = proposals[proposalId];
 
         require(!proposal.executed, "Proposal already executed");
-        require(_isOwner(proposal.plotId, msg.sender), "Not an owner");
+        require(_hasToApprove(proposalId, msg.sender), "Can not approve");
         require(!proposal.approvals[msg.sender], "Already approved");
 
         proposal.approvals[msg.sender] = true;
@@ -117,20 +140,18 @@ contract TrustEstate is ERC721 {
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.executed, "Proposal already executed");
 
-        uint256 sumOfOwnerShares = 0;
-        for (uint256 i = 0; i < proposal.approvers.length; i++) {
-            address approver = proposal.approvers[i];
-            uint256 share = _getShare(proposal.plotId, approver);
-            sumOfOwnerShares += share;
+        for (uint256 i = 0; i < proposal.hasToApprove.length; i++) {
+            if (!_contains(proposal.approvers, proposal.hasToApprove[i])) {
+                revert("Not all owners have approved");
+            }
         }
-
-        require(sumOfOwnerShares == plots[proposal.plotId].totalShares, "Not all owners have approved");
 
         if (proposal.proposalType == ProposalType.Split) {
             SplitProposalData memory splitData = abi.decode(proposal.proposalData, (SplitProposalData));
             _executeProposalSplit(proposal.plotId, splitData);
         } else if (proposal.proposalType == ProposalType.Merge) {
-            revert("Not implemented");
+            MergeProposalData memory mergeData = abi.decode(proposal.proposalData, (MergeProposalData));
+            _executeProposalMerge(mergeData);
         } else {
             revert("Invalid proposal type");
         }
@@ -139,13 +160,20 @@ contract TrustEstate is ERC721 {
         emit ProposalExecuted(proposal.plotId, proposalId);
     }
 
-    // Execute a proposal
     function _executeProposalSplit(uint256 plotId, SplitProposalData memory splitData) internal {
         _mintPlot(splitData.split1);
         _mintPlot(splitData.split2);
 
         _burn(plotId);
         delete plots[plotId];
+    }
+
+    function _executeProposalMerge(MergeProposalData memory mergeData) internal {
+        _mintPlot(mergeData.merge);
+        _burn(mergeData.plotId1);
+        _burn(mergeData.plotId2);
+        delete plots[mergeData.plotId1];
+        delete plots[mergeData.plotId2];
     }
 
 
@@ -174,12 +202,29 @@ contract TrustEstate is ERC721 {
 
     // Internal helper to check ownership
     function _isOwner(uint256 tokenId, address account) public view returns (bool) {
-        Ownership[] memory owners = plots[tokenId].owners;
+        return _contains(_getOwners(tokenId), account);
+    }
+
+    function _hasToApprove(uint256 proposalId, address account) public view returns (bool) {
+        return _contains(proposals[proposalId].hasToApprove, account);
+    }
+
+    function _getOwners(uint256 tokenId) public view returns (address[] memory) {
+        address[] memory owners = new address[](plots[tokenId].owners.length);
         for (uint256 i = 0; i < owners.length; i++) {
-            if (owners[i].owner == account) {
+            owners[i] = plots[tokenId].owners[i].owner;
+        }
+
+        return owners;
+    }
+
+    function _contains(address[] memory arr, address item) internal pure returns (bool) {
+        for (uint256 i = 0; i < arr.length; i++) {
+            if (arr[i] == item) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -192,5 +237,29 @@ contract TrustEstate is ERC721 {
             }
         }
         return 0;
+    }
+
+    function _mergeUnique(address[] memory arr1, address[] memory arr2) internal pure returns (address[] memory) {
+        uint256 uniqueCount = arr1.length;
+        for (uint256 i = 0; i < arr2.length; i++) {
+            if (!_contains(arr1, arr2[i])) {
+                uniqueCount++;
+            }
+        }
+
+        address[] memory result = new address[](uniqueCount);
+        for (uint256 i = 0; i < arr1.length; i++) {
+            result[i] = arr1[i];
+        }
+
+        uint256 resultIndex = arr1.length;
+        for (uint256 i = 0; i < arr2.length; i++) {
+            if(!_contains(arr1, arr2[i])) {
+                result[resultIndex] = arr2[i];
+                resultIndex++;
+            }
+        }
+
+        return result;
     }
 }
