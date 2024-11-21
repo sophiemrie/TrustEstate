@@ -23,9 +23,10 @@ describe("TrustEstate", function () {
         const shares = [6000, 4000]; // Shares are scaled by 10^4 (i.e., 60% and 40%)
         const totalShares = 10000;
         const ipfsHash = "QmTestHash12345";
+        const allowIndividualTransfer = true;
 
         await expect(
-            landRegistry.mintPlot(owners, shares, totalShares, ipfsHash)
+            landRegistry.mintPlot(owners, shares, totalShares, ipfsHash, allowIndividualTransfer)
         )
             .to.emit(landRegistry, "Transfer")
             .withArgs(ethers.ZeroAddress, owner.address, 1);
@@ -36,7 +37,10 @@ describe("TrustEstate", function () {
         expect(plot.totalShares).to.equal(totalShares);
         expect(plot.owners.length).to.equal(2);
         expect(plot.owners[0].owner).to.equal(owners[0]);
+        expect(plot.owners[1].owner).to.equal(owners[1]);
         expect(plot.owners[0].share).to.equal(shares[0]);
+        expect(plot.owners[1].share).to.equal(shares[1]);
+        expect(plot.allowIndividualTransfer).to.equal(allowIndividualTransfer);
     });
 
     it("Should create a split proposal", async function () {
@@ -44,14 +48,16 @@ describe("TrustEstate", function () {
         const shares = [6000, 4000];
         const totalShares = 10000;
         const ipfsHash = "QmTestHash12345";
+        const allowIndividualTransfer = true;
 
-        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash);
+        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash, allowIndividualTransfer);
 
         const split1 = {
             owners: [owner.address],
             shares: [10000],
             totalShares: 10000,
             ipfsHash: "QmSplitHash1",
+            allowIndividualTransfer: true,
         };
 
         const split2 = {
@@ -59,6 +65,7 @@ describe("TrustEstate", function () {
             shares: [10000],
             totalShares: 10000,
             ipfsHash: "QmSplitHash2",
+            allowIndividualTransfer: true,
         };
 
         await expect(landRegistry.createSplitProposal(1, split1, split2))
@@ -75,14 +82,16 @@ describe("TrustEstate", function () {
         const shares = [6000, 4000];
         const totalShares = 10000;
         const ipfsHash = "QmTestHash12345";
+        const allowIndividualTransfer = true;
 
-        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash);
+        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash, allowIndividualTransfer);
 
         const split1 = {
             owners: [owner.address],
             shares: [10000],
             totalShares: 10000,
             ipfsHash: "QmSplitHash1",
+            allowIndividualTransfer: true,
         };
 
         const split2 = {
@@ -90,6 +99,7 @@ describe("TrustEstate", function () {
             shares: [10000],
             totalShares: 10000,
             ipfsHash: "QmSplitHash2",
+            allowIndividualTransfer: true,
         };
 
         await landRegistry.createSplitProposal(1, split1, split2);
@@ -114,14 +124,16 @@ describe("TrustEstate", function () {
         const shares = [6000, 4000];
         const totalShares = 10000;
         const ipfsHash = "QmTestHash12345";
+        const allowIndividualTransfer = true;
 
-        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash);
+        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash, allowIndividualTransfer);
 
         const split1 = {
             owners: [owner.address],
             shares: [10000],
             totalShares: 10000,
             ipfsHash: "QmSplitHash1",
+            allowIndividualTransfer: true,
         };
 
         const split2 = {
@@ -129,6 +141,7 @@ describe("TrustEstate", function () {
             shares: [10000],
             totalShares: 10000,
             ipfsHash: "QmSplitHash2",
+            allowIndividualTransfer: true,
         };
 
         await landRegistry.createSplitProposal(1, split1, split2);
@@ -142,10 +155,12 @@ describe("TrustEstate", function () {
         const plot1 = await landRegistry.getPlot(2);
         expect(plot1.ipfsHash).to.equal("QmSplitHash1");
         expect(plot1.totalShares).to.equal(10000);
+        expect(plot1.allowIndividualTransfer).to.equal(true);
 
         const plot2 = await landRegistry.getPlot(3);
         expect(plot2.ipfsHash).to.equal("QmSplitHash2");
         expect(plot2.totalShares).to.equal(10000);
+        expect(plot1.allowIndividualTransfer).to.equal(true);
     });
 
     it("should allow owner to merge two plots", async function () {
@@ -153,20 +168,23 @@ describe("TrustEstate", function () {
         const shares1 = [6000, 4000];
         const totalShares1 = 10000;
         const ipfsHash1 = "QmTestHash12345";
+        const allowIndividualTransfer1 = true;
 
         const owners2 = [owner.address, addr2.address];
         const shares2 = [4000, 6000];
         const totalShares2 = 10000;
         const ipfsHash2 = "QmTestHash6789";
+        const allowIndividualTransfer2 = true;
 
-        await landRegistry.mintPlot(owners1, shares1, totalShares1, ipfsHash1);
-        await landRegistry.mintPlot(owners2, shares2, totalShares2, ipfsHash2);
+        await landRegistry.mintPlot(owners1, shares1, totalShares1, ipfsHash1, allowIndividualTransfer1);
+        await landRegistry.mintPlot(owners2, shares2, totalShares2, ipfsHash2, allowIndividualTransfer2);
 
         const merge = {
             owners: [owner.address, addr1.address, addr2.address],
             shares: [5000, 5000, 5000],
             totalShares: 15000,
             ipfsHash: "QmMergeHash",
+            allowIndividualTransfer: true,
         };
 
         await landRegistry.createMergeProposal(1, 2, merge);
@@ -184,16 +202,19 @@ describe("TrustEstate", function () {
         expect(plot1.owners).to.be.empty; // Empty array
         expect(plot1.ipfsHash).to.equal(''); // Empty string
         expect(plot1.totalShares).to.equal(0n); // Default BigNumber 0
+        expect(plot1.allowIndividualTransfer).to.equal(false);
 
         const plot2 = await landRegistry.getPlot(2);
         expect(plot2.id).to.equal(0n);
         expect(plot2.owners).to.be.empty;
         expect(plot2.ipfsHash).to.equal('');
         expect(plot2.totalShares).to.equal(0n);
+        expect(plot2.allowIndividualTransfer).to.equal(false);
 
         const plot3 = await landRegistry.getPlot(3);
         expect(plot3.ipfsHash).to.equal("QmMergeHash");
         expect(plot3.totalShares).to.equal(15000);
+        expect(plot3.allowIndividualTransfer).to.equal(true);
     });
     
     it("should allow owner to split and merge a plot", async function () {
@@ -201,14 +222,16 @@ describe("TrustEstate", function () {
         const shares = [10000]; // Shares are scaled by 10^4 (i.e., 60% and 40%)
         const totalShares = 10000;
         const ipfsHash = "QmPlot1";
+        const allowIndividualTransfer = true;
         // mint a plot
-        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash);
+        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash, allowIndividualTransfer);
 
         const plotInfo = {
             owners,
             shares,
             totalShares,
             ipfsHash,
+            allowIndividualTransfer,
         };
 
         await expect(landRegistry.createSplitProposal(1, plotInfo, plotInfo))
@@ -231,21 +254,31 @@ describe("TrustEstate", function () {
             .to.emit(landRegistry, "ProposalExecuted")
             .withArgs(2, 2);
 
-        const plot1 = await landRegistry.getPlot(2);
+        const plot1 = await landRegistry.getPlot(1);
         expect(plot1.id).to.equal(0n);
         expect(plot1.owners).to.be.empty;
         expect(plot1.ipfsHash).to.equal('');
         expect(plot1.totalShares).to.equal(0n);
+        expect(plot1.allowIndividualTransfer).to.equal(false);
 
-        const plot2 = await landRegistry.getPlot(3);
+        const plot2 = await landRegistry.getPlot(2);
         expect(plot2.id).to.equal(0n);
         expect(plot2.owners).to.be.empty;
         expect(plot2.ipfsHash).to.equal('');
         expect(plot2.totalShares).to.equal(0n);
+        expect(plot2.allowIndividualTransfer).to.equal(false);
 
-        const plot3 = await landRegistry.getPlot(4);
-        expect(plot3.ipfsHash).to.equal(plotInfo.ipfsHash);
-        expect(plot3.totalShares).to.equal(plotInfo.totalShares);
+        const plot3 = await landRegistry.getPlot(3);
+        expect(plot3.id).to.equal(0n);
+        expect(plot3.owners).to.be.empty;
+        expect(plot3.ipfsHash).to.equal('');
+        expect(plot3.totalShares).to.equal(0n);
+        expect(plot3.allowIndividualTransfer).to.equal(false);
+
+        const plot4 = await landRegistry.getPlot(4);
+        expect(plot4.ipfsHash).to.equal(plotInfo.ipfsHash);
+        expect(plot4.totalShares).to.equal(plotInfo.totalShares);
+        expect(plot4.allowIndividualTransfer).to.equal(plotInfo.allowIndividualTransfer);
     });
 
     it("Should allow owners to transfer plots", async () => {
@@ -253,14 +286,16 @@ describe("TrustEstate", function () {
         const shares = [6000, 4000];
         const totalShares = 10000;
         const ipfsHash = "QmTestHash12345";
+        const allowIndividualTransfer = true;
 
-        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash);
+        await landRegistry.mintPlot(owners, shares, totalShares, ipfsHash, allowIndividualTransfer);
 
         const transfer = {
             owners: [addr2.address, addr3.address],
             shares: [9000, 2000],
             totalShares: 11000,
             ipfsHash: "QmTransferHash",
+            allowIndividualTransfer: true,
         };
 
         await landRegistry.createTransferProposal(1, transfer);
@@ -283,6 +318,7 @@ describe("TrustEstate", function () {
         expect(plot.ipfsHash).to.equal(transfer.ipfsHash);
         expect(plot.totalShares).to.equal(transfer.totalShares);
         expect(plot.owners.length).to.equal(transfer.owners.length);
+        expect(plot.allowIndividualTransfer).to.equal(transfer.allowIndividualTransfer);
         expect(plot.owners[0].owner).to.equal(transfer.owners[0]);
         expect(plot.owners[1].owner).to.equal(transfer.owners[1]);
         expect(plot.owners[0].share).to.equal(transfer.shares[0]);

@@ -41,6 +41,7 @@ contract TrustEstate is ERC721 {
         uint256[] shares;
         uint256 totalShares;
         string ipfsHash;
+        bool allowIndividualTransfer;
     }
 
     struct Plot {
@@ -73,15 +74,39 @@ contract TrustEstate is ERC721 {
         address[] memory owners,
         uint256[] memory shares,
         uint256 totalShares,
-        string memory ipfsHash
+        string memory ipfsHash,
+        bool allowIndividualTransfer
     ) public {
         PlotDetails memory plot;
         plot.owners = owners;
         plot.shares = shares;
         plot.totalShares = totalShares;
         plot.ipfsHash = ipfsHash;
+        plot.allowIndividualTransfer = allowIndividualTransfer;
 
         _mintPlot(plot);
+    }
+
+    function transferOwnershipShare(address from, address to, uint256 plotId, uint256 amount) public {
+        require(plots[plotId].id != 0, "LandToken: Transfer for nonexistent token");
+        require(_isOwner(plotId, from), "Not an owner");
+        uint256 shareOfCurrentOwner = _getShare(plotId, from);
+        require(shareOfCurrentOwner > amount, "Not enough shares");
+        require(plots[plotId].allowIndividualTransfer, "Plot is not allowed to be individually transferred");
+
+        uint256 ownerIndex = 0;
+        for (uint256 i = 0; i < plots[plotId].owners.length; i++) {
+            if (plots[plotId].owners[i].owner == from) {
+                ownerIndex = i;
+            }
+        }
+
+        if (shareOfCurrentOwner == amount) {
+            plots[plotId].owners[ownerIndex].owner = to;
+        } else {
+            plots[plotId].owners.push(Ownership({ owner: to, share: amount }));
+            plots[plotId].owners[ownerIndex].share -= amount;
+        }
     }
 
     function createSplitProposal(
@@ -214,6 +239,7 @@ contract TrustEstate is ERC721 {
         newPlot.id = plotCount;
         newPlot.ipfsHash = plotDetails.ipfsHash;
         newPlot.totalShares = plotDetails.totalShares;
+        newPlot.allowIndividualTransfer = plotDetails.allowIndividualTransfer;
 
         for (uint256 i = 0; i < plotDetails.owners.length; i++) {
             newPlot.owners.push(Ownership({ owner: plotDetails.owners[i], share: plotDetails.shares[i] }));
