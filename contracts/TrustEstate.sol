@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-
-contract TrustEstate is ERC721 {
+contract TrustEstate {
     struct Ownership {
         address owner;
-        uint256 share; // Ownership share as a percentage (scaled by 10^4 for precision)
+        uint256 share;
     }
 
     enum ProposalType { Split, Merge, Transfer }
@@ -24,99 +22,113 @@ contract TrustEstate is ERC721 {
     struct SplitProposalData {
         PlotDetails split1;      // Split data for the action
         PlotDetails split2;      // Split data for the action
+        Ownership[] owners1;     // Owners for the first plot
+        Ownership[] owners2;     // Owners for the second plot
     }
 
     struct MergeProposalData {
         PlotDetails merge;  // Merged plot data
+        Ownership[] owners; // Owners for the merged plot
         uint256 plotId1;
         uint256 plotId2;
     }
 
     struct TransferProposalData {
-        PlotDetails transfer;
+        Ownership[] owners;
     }
 
     struct PlotDetails {
-        address[] owners;
-        uint256[] shares;
-        uint256 totalShares;
         string ipfsHash;
         bool allowIndividualTransfer;
     }
 
     struct Plot {
         uint256 id; // Unique governmental ID
-        Ownership[] owners; // List of owners and their shares
         string ipfsHash; // Hash of geospatial data stored on IPFS
-        uint256 totalShares; // Total shares available for the land (e.g., 100 shares)
         bool allowIndividualTransfer; // Whether or not the land can be sold individually
     }
 
-    mapping(uint256 => Plot) public plots; // Token ID => Owners and shares
-    uint256 public plotCount;
+    // Token name
+    string private _name;
 
-    mapping(uint256 => Proposal) public proposals; //  Proposal ID => Proposal
+    // Token symbol
+    string private _symbol;
 
-    uint256 public proposalCount;
+    mapping(uint256 plotId => Ownership[]) private _owners;
+
+    mapping(uint256 plotId => Plot) private _plots;
+    uint256 private _plotCount;
+
+    mapping(uint256 proposalId => Proposal) public proposals;
+    uint256 private _proposalCount;
 
     event ProposalCreated(uint256 plotId, uint256 proposalId);
     event ProposalApproved(uint256 plotId, uint256 proposalId, address approver);
     event ProposalExecuted(uint256 plotId, uint256 proposalId);
+    event Transfer(uint256 plotId, Ownership[] from, Ownership[] to);
 
-    constructor() ERC721("TrustEstate", "TE") {}
-
-    function getPlot(uint256 id) external view returns (Plot memory) {
-        return plots[id];
+    constructor(string memory name_, string memory symbol_) {
+        _name = name_;
+        _symbol = symbol_;
     }
 
-    // Mint a new plot of land with initial ownership
+    function getPlot(uint256 id) external view returns (Plot memory) {
+        return _plots[id];
+    }
+
     function mintPlot(
-        address[] memory owners,
-        uint256[] memory shares,
-        uint256 totalShares,
-        string memory ipfsHash,
+        Ownership[] calldata owners,
+        string calldata ipfsHash,
         bool allowIndividualTransfer
     ) public {
         PlotDetails memory plot;
-        plot.owners = owners;
-        plot.shares = shares;
-        plot.totalShares = totalShares;
         plot.ipfsHash = ipfsHash;
         plot.allowIndividualTransfer = allowIndividualTransfer;
 
-        _mintPlot(plot);
+        _mint(plot, owners);
     }
 
     function transferOwnershipShare(address from, address to, uint256 plotId, uint256 amount) public {
-        require(plots[plotId].id != 0, "LandToken: Transfer for nonexistent token");
+        require(_plots[plotId].id != 0, "LandToken: Transfer for nonexistent token");
         require(_isOwner(plotId, from), "Not an owner");
         uint256 shareOfCurrentOwner = _getShare(plotId, from);
         require(shareOfCurrentOwner > amount, "Not enough shares");
-        require(plots[plotId].allowIndividualTransfer, "Plot is not allowed to be individually transferred");
+        require(_plots[plotId].allowIndividualTransfer, "Plot is not allowed to be individually transferred");
 
         uint256 ownerIndex = 0;
-        for (uint256 i = 0; i < plots[plotId].owners.length; i++) {
-            if (plots[plotId].owners[i].owner == from) {
+        for (uint256 i = 0; i < _owners[plotId].length; i++) {
+            if (_owners[plotId][i].owner == from) {
                 ownerIndex = i;
             }
         }
 
         if (shareOfCurrentOwner == amount) {
-            plots[plotId].owners[ownerIndex].owner = to;
+            _owners[plotId][ownerIndex].owner = to;
         } else {
-            plots[plotId].owners.push(Ownership({ owner: to, share: amount }));
-            plots[plotId].owners[ownerIndex].share -= amount;
+            _owners[plotId].push(Ownership({ owner: to, share: amount }));
+            _owners[plotId][ownerIndex].share -= amount;
         }
+
+        // TOOD Emit event
     }
 
     function createSplitProposal(
         uint256 plotId,
         PlotDetails memory split1,
-        PlotDetails memory split2
+        PlotDetails memory split2,
+        Ownership[] memory owners1,
+        Ownership[] memory owners2
     ) external {
         require(_isOwner(plotId, msg.sender), "Not an owner");
+        _checkOwners(owners1);
+        _checkOwners(owners2);
 
-        SplitProposalData memory splitData = SplitProposalData({ split1: split1, split2: split2 });
+        SplitProposalData memory splitData = SplitProposalData({
+            split1: split1,
+            split2: split2,
+            owners1: owners1,
+            owners2: owners2
+        });
         bytes memory encodedData = abi.encode(splitData);
 
         address[] memory hasToApprove = _getOwners(plotId);
@@ -124,24 +136,35 @@ contract TrustEstate is ERC721 {
         _createProposal(plotId, ProposalType.Split, hasToApprove, encodedData);
     }
 
-    function createMergeProposal(uint256 plotId1, uint256 plotId2, PlotDetails memory merge) external {
+    function createMergeProposal(
+        uint256 plotId1,
+        uint256 plotId2,
+        PlotDetails memory merge,
+        Ownership[] memory owners
+    ) external {
         require(_isOwner(plotId1, msg.sender) || _isOwner(plotId2, msg.sender), "Not an owner");
+        _checkOwners(owners);
 
-        MergeProposalData memory mergeData = MergeProposalData({ merge: merge, plotId1: plotId1, plotId2: plotId2 });
+        MergeProposalData memory mergeData = MergeProposalData({
+            merge: merge,
+            owners: owners,
+            plotId1: plotId1,
+            plotId2: plotId2
+        });
         bytes memory encodedData = abi.encode(mergeData);
 
-        address[] memory owners1 = _getOwners(plotId1);
-        address[] memory owners2 = _getOwners(plotId2);
-
-        address[] memory hasToApprove = _mergeUnique(owners1, owners2);
+        address[] memory hasToApprove = _mergeUnique(_owners[plotId1], _owners[plotId2]);
 
         _createProposal(plotId1, ProposalType.Merge, hasToApprove, encodedData);
     }
 
-    function createTransferProposal(uint256 plotId, PlotDetails memory transfer) external {
+    function createTransferProposal(uint256 plotId, Ownership[] memory owners) external {
         require(_isOwner(plotId, msg.sender), "Not an owner");
+        _checkOwners(owners);
 
-        TransferProposalData memory transferData = TransferProposalData({ transfer: transfer });
+        TransferProposalData memory transferData = TransferProposalData({
+            owners: owners
+        });
         bytes memory encodedData = abi.encode(transferData);
         _createProposal(plotId, ProposalType.Transfer, _getOwners(plotId), encodedData);
     }
@@ -149,15 +172,15 @@ contract TrustEstate is ERC721 {
     function _createProposal(uint256 plotId, ProposalType proposalType, address[] memory hasToApprove, bytes memory proposalData) internal {
         require(_isOwner(plotId, msg.sender), "Not an owner");
 
-        proposalCount++;
-        Proposal storage proposal = proposals[proposalCount];
+        _proposalCount++;
+        Proposal storage proposal = proposals[_proposalCount];
         proposal.plotId = plotId;
         proposal.proposalType = proposalType;
         proposal.proposalData = proposalData;
         proposal.hasToApprove = hasToApprove;
         proposal.executed = false;
 
-        emit ProposalCreated(plotId, proposalCount);
+        emit ProposalCreated(plotId, _proposalCount);
     }
 
     function approveProposal(uint256 proposalId) external {
@@ -201,54 +224,67 @@ contract TrustEstate is ERC721 {
     }
 
     function _executeProposalSplit(uint256 plotId, SplitProposalData memory splitData) internal {
-        _mintPlot(splitData.split1);
-        _mintPlot(splitData.split2);
+        _mint(splitData.split1, splitData.owners1);
+        _mint(splitData.split2, splitData.owners2);
 
         _burn(plotId);
-        delete plots[plotId];
+    }
+    
+    function _burn(uint256 plotId) internal {
+        delete _plots[plotId];
+        delete _owners[plotId];
     }
 
     function _executeProposalMerge(MergeProposalData memory mergeData) internal {
-        _mintPlot(mergeData.merge);
+        _mint(mergeData.merge, mergeData.owners);
+
         _burn(mergeData.plotId1);
         _burn(mergeData.plotId2);
-        delete plots[mergeData.plotId1];
-        delete plots[mergeData.plotId2];
     }
 
     function _executeProposalTransfer(uint256 plotId, TransferProposalData memory transfer) internal {
-        _mintPlot(transfer.transfer);
-        _burn(plotId);
-        delete plots[plotId];
+        delete _owners[plotId];
+
+        for (uint256 i = 0; i < transfer.owners.length; i++) {
+            _owners[plotId].push(transfer.owners[i]);
+        }
     }
 
     // Internal helper to mint a new plot
-    function _mintPlot(PlotDetails memory plotDetails) internal {
-        require(plotDetails.owners.length == plotDetails.shares.length, "Mismatched owners and shares");
+    function _mint(PlotDetails memory plotDetails, Ownership[] memory owners) internal {
+        _checkOwners(owners);
 
-        uint256 sumOfOwnerShares = 0;
-        for (uint256 i = 0; i < plotDetails.shares.length; i++) {
-            sumOfOwnerShares += plotDetails.shares[i];
-        }
-        require(sumOfOwnerShares == plotDetails.totalShares, "Total shares must match sum of owner shares");
-        
-        plotCount++;
-        _mint(msg.sender, plotCount);
+        _plotCount++;
 
-        Plot storage newPlot = plots[plotCount];
-        newPlot.id = plotCount;
+        Plot storage newPlot = _plots[_plotCount];
+        newPlot.id = _plotCount;
         newPlot.ipfsHash = plotDetails.ipfsHash;
-        newPlot.totalShares = plotDetails.totalShares;
         newPlot.allowIndividualTransfer = plotDetails.allowIndividualTransfer;
 
-        for (uint256 i = 0; i < plotDetails.owners.length; i++) {
-            newPlot.owners.push(Ownership({ owner: plotDetails.owners[i], share: plotDetails.shares[i] }));
+        _plots[_plotCount] = newPlot;
+
+        delete _owners[_plotCount];
+
+        for (uint256 i = 0; i < owners.length; i++) {
+            _owners[_plotCount].push(owners[i]);
         }
+
+        emit Transfer(_plotCount, new Ownership[](0), owners);
     }
 
     // Internal helper to check ownership
     function _isOwner(uint256 tokenId, address account) public view returns (bool) {
-        return _contains(_getOwners(tokenId), account);
+        return _isOwnerInArray(account, _owners[tokenId]);
+    }
+
+    function _isOwnerInArray(address account, Ownership[] memory owners) public pure returns (bool) {
+        for (uint256 i = 0; i < owners.length; i++) {
+            if (owners[i].owner == account) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     function _hasToApprove(uint256 proposalId, address account) public view returns (bool) {
@@ -256,9 +292,10 @@ contract TrustEstate is ERC721 {
     }
 
     function _getOwners(uint256 tokenId) public view returns (address[] memory) {
-        address[] memory owners = new address[](plots[tokenId].owners.length);
+        address[] memory owners = new address[](_owners[tokenId].length);
+
         for (uint256 i = 0; i < owners.length; i++) {
-            owners[i] = plots[tokenId].owners[i].owner;
+            owners[i] = _owners[tokenId][i].owner;
         }
 
         return owners;
@@ -276,7 +313,7 @@ contract TrustEstate is ERC721 {
 
     // Internal helper to get share of an owner
     function _getShare(uint256 tokenId, address account) internal view returns (uint256) {
-        Ownership[] memory owners = plots[tokenId].owners;
+        Ownership[] memory owners = _owners[tokenId];
         for (uint256 i = 0; i < owners.length; i++) {
             if (owners[i].owner == account) {
                 return owners[i].share;
@@ -285,27 +322,61 @@ contract TrustEstate is ERC721 {
         return 0;
     }
 
-    function _mergeUnique(address[] memory arr1, address[] memory arr2) internal pure returns (address[] memory) {
-        uint256 uniqueCount = arr1.length;
-        for (uint256 i = 0; i < arr2.length; i++) {
-            if (!_contains(arr1, arr2[i])) {
+    function _mergeUnique(Ownership[] memory ownerships1, Ownership[] memory ownerships2) internal pure returns (address[] memory) {
+        uint256 uniqueCount = ownerships1.length;
+        for (uint256 i = 0; i < ownerships2.length; i++) {
+            if (!_isOwnerInArray(ownerships2[i].owner, ownerships1)) {
                 uniqueCount++;
             }
         }
 
         address[] memory result = new address[](uniqueCount);
-        for (uint256 i = 0; i < arr1.length; i++) {
-            result[i] = arr1[i];
+        for (uint256 i = 0; i < ownerships1.length; i++) {
+            result[i] = ownerships1[i].owner;
         }
 
-        uint256 resultIndex = arr1.length;
-        for (uint256 i = 0; i < arr2.length; i++) {
-            if(!_contains(arr1, arr2[i])) {
-                result[resultIndex] = arr2[i];
+        uint256 resultIndex = ownerships1.length;
+        for (uint256 i = 0; i < ownerships2.length; i++) {
+            if(!_isOwnerInArray(ownerships2[i].owner, ownerships1)) {
+                result[resultIndex] = ownerships2[i].owner;
                 resultIndex++;
             }
         }
 
         return result;
+    }
+
+    function _getTotalShares(uint256 plotId) internal view returns (uint256) {
+        uint256 totalShares = 0;
+        for (uint256 i = 0; i < _owners[plotId].length; i++) {
+            totalShares += _owners[plotId][i].share;
+        }
+        return totalShares;
+    }
+
+    function _checkOwners(Ownership[] memory owners) internal pure {
+        require(owners.length > 0, "Owners must be non-empty");
+
+        for (uint256 i = 0; i < owners.length; i++) {
+            require(owners[i].share > 0, "Ownership share must be greater than 0");
+            require(owners[i].owner != address(0), "Owner address must be non-zero");
+        }
+
+        address[] memory ownersAddresses = new address[](owners.length);
+        for (uint256 i = 0; i < owners.length; i++) {
+            ownersAddresses[i] = owners[i].owner;
+        }
+        require(_isUnique(ownersAddresses), "Owners must be unique");
+    }
+
+    function _isUnique(address[] memory arr) internal pure returns (bool) {
+        for (uint256 i = 0; i < arr.length; i++) {
+            for (uint256 j = i + 1; j < arr.length; j++) {
+                if (arr[i] == arr[j]) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
