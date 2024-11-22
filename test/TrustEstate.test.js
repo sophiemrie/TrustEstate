@@ -11,11 +11,28 @@ describe("TrustEstate", function () {
     let addr3;
 
     beforeEach(async function () {
+        // Deploy the DIDRegistry contract before each test
+        DIDRegistry = await ethers.getContractFactory("DIDRegistry");
+        [owner, addr1, addr2, addr3] = await ethers.getSigners();
+        didRegistry = await DIDRegistry.deploy();
+        await didRegistry.waitForDeployment();
+
         // Deploy the contract before each test
         TrustEstate = await ethers.getContractFactory("TrustEstate");
         [owner, addr1, addr2, addr3] = await ethers.getSigners();
-        landRegistry = await TrustEstate.deploy("TrustEstate", "TE");
+        landRegistry = await TrustEstate.deploy("TrustEstate", "TE", didRegistry.getAddress());
         await landRegistry.waitForDeployment();
+
+        // Set up DIDs for all test addresses
+        await didRegistry.connect(owner).registerDID("did:example:owner", "test doc");
+        await didRegistry.connect(addr1).registerDID("did:example:addr1", "test doc");
+        await didRegistry.connect(addr2).registerDID("did:example:addr2", "test doc");
+        await didRegistry.connect(addr3).registerDID("did:example:addr3", "test doc");
+
+        await landRegistry.connect(owner).register("did:example:owner");
+        await landRegistry.connect(addr1).register("did:example:addr1");
+        await landRegistry.connect(addr2).register("did:example:addr2");
+        await landRegistry.connect(addr3).register("did:example:addr3");
     });
 
     it("Should mint a new plot of land with initial ownership", async function () {

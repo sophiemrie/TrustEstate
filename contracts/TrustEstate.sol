@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./DIDRegistry.sol";
+
 contract TrustEstate {
     struct Ownership {
         address owner;
         uint256 share;
     }
+
+    DIDRegistry public didRegistry;
 
     enum ProposalType { Split, Merge, Transfer }
 
@@ -62,14 +66,25 @@ contract TrustEstate {
     mapping(uint256 proposalId => Proposal) public proposals;
     uint256 private _proposalCount;
 
+    mapping(address owner => string did) public dids;
+
     event ProposalCreated(uint256 plotId, uint256 proposalId);
     event ProposalApproved(uint256 plotId, uint256 proposalId, address approver);
     event ProposalExecuted(uint256 plotId, uint256 proposalId);
     event Transfer(uint256 plotId, Ownership[] from, Ownership[] to);
 
-    constructor(string memory name_, string memory symbol_) {
+    constructor(
+        string memory name_, 
+        string memory symbol_,
+        address didRegistryAddress
+    ) {
         _name = name_;
         _symbol = symbol_;
+        didRegistry = DIDRegistry(didRegistryAddress);
+    }
+
+    function register(string calldata did) public {
+        dids[msg.sender] = did;
     }
 
     function getPlot(uint256 id) external view returns (Plot memory) {
@@ -354,7 +369,7 @@ contract TrustEstate {
         return totalShares;
     }
 
-    function _checkOwners(Ownership[] memory owners) internal pure {
+    function _checkOwners(Ownership[] memory owners) internal view {
         require(owners.length > 0, "Owners must be non-empty");
 
         for (uint256 i = 0; i < owners.length; i++) {
@@ -367,6 +382,18 @@ contract TrustEstate {
             ownersAddresses[i] = owners[i].owner;
         }
         require(_isUnique(ownersAddresses), "Owners must be unique");
+
+        // Verify DIDs for all owners
+        for (uint256 i = 0; i < owners.length; i++) {
+            require(bytes(dids[owners[i].owner]).length > 0, "DID must be provided");
+            require(didRegistry.verifyDID(dids[owners[i].owner]), "Invalid DID");
+            
+            // Verify that the DID belongs to the owner's address
+            require(
+                didRegistry.isOwner(dids[owners[i].owner], owners[i].owner),
+                "DID owner mismatch"
+            );
+        }
     }
 
     function _isUnique(address[] memory arr) internal pure returns (bool) {
