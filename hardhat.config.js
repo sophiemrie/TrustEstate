@@ -5,6 +5,6 @@ require("@nomicfoundation/hardhat-toolbox");
 module.exports = {
     solidity: "0.8.27",
     gasReporter: {
-        enabled: (process.env.REPORT_GAS) ? true : false
+        enabled: true
     }
 };

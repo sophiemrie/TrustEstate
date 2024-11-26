@@ -5,7 +5,7 @@ import "./DIDRegistry.sol";
 
 contract TrustEstate {
     struct Ownership {
-        address owner;
+        address owner; // wallet Adresse, Datentyp adress ist immer wallet adresse
         uint256 share;
     }
 
@@ -149,6 +149,10 @@ contract TrustEstate {
         address[] memory hasToApprove = _getOwners(plotId);
 
         _createProposal(plotId, ProposalType.Split, hasToApprove, encodedData);
+    }
+
+    function getPlotCount() public view returns (uint256) {
+        return _plotCount;
     }
 
     function createMergeProposal(
