@@ -58,6 +58,10 @@ contract TrustEstate {
     // Token symbol
     string private _symbol;
 
+    // Mandatory participant for Merge / Split
+    address private _madatoryPartitcipant;
+
+    // TODO: Add a reverse mapping from owner address to plotId, to retrieve plots by owner
     mapping(uint256 plotId => Ownership[]) private _owners;
 
     mapping(uint256 plotId => Plot) private _plots;
@@ -76,10 +80,12 @@ contract TrustEstate {
     constructor(
         string memory name_, 
         string memory symbol_,
+        address madatoryPartitcipant,
         address didRegistryAddress
     ) {
         _name = name_;
         _symbol = symbol_;
+        _madatoryPartitcipant = madatoryPartitcipant;
         didRegistry = DIDRegistry(didRegistryAddress);
     }
 
@@ -96,6 +102,8 @@ contract TrustEstate {
         string calldata ipfsHash,
         bool allowIndividualTransfer
     ) public {
+        require(msg.sender == _madatoryPartitcipant, "Only the mandatory participant can mint plots");
+
         PlotDetails memory plot;
         plot.ipfsHash = ipfsHash;
         plot.allowIndividualTransfer = allowIndividualTransfer;
@@ -124,7 +132,7 @@ contract TrustEstate {
             _owners[plotId][ownerIndex].share -= amount;
         }
 
-        // TOOD Emit event
+        // TODO Emit event
     }
 
     function createSplitProposal(
@@ -146,7 +154,7 @@ contract TrustEstate {
         });
         bytes memory encodedData = abi.encode(splitData);
 
-        address[] memory hasToApprove = _getOwners(plotId);
+        address[] memory hasToApprove = _addMandatoryParticipant(_getOwners(plotId));
 
         _createProposal(plotId, ProposalType.Split, hasToApprove, encodedData);
     }
@@ -172,7 +180,7 @@ contract TrustEstate {
         });
         bytes memory encodedData = abi.encode(mergeData);
 
-        address[] memory hasToApprove = _mergeUnique(_owners[plotId1], _owners[plotId2]);
+        address[] memory hasToApprove = _addMandatoryParticipant(_mergeUnique(_owners[plotId1], _owners[plotId2]));
 
         _createProposal(plotId1, ProposalType.Merge, hasToApprove, encodedData);
     }
@@ -213,6 +221,8 @@ contract TrustEstate {
         proposal.approvers.push(msg.sender);
 
         emit ProposalApproved(proposal.plotId, proposalId, msg.sender);
+
+        // TODO: Check if proposal is ready to be executed and execute it
     }
 
     function executeProposal(uint256 proposalId) external {
@@ -410,4 +420,16 @@ contract TrustEstate {
         }
         return true;
     }
+
+    function _addMandatoryParticipant(address[] memory currentOwners) internal view returns (address[] memory) {
+        address[] memory hasToApprove = new address[](currentOwners.length + 1);
+
+        for (uint256 i = 0; i < currentOwners.length; i++) {
+            hasToApprove[i] = currentOwners[i];
+        }
+        hasToApprove[currentOwners.length] = _madatoryPartitcipant;
+
+        return hasToApprove;
+    }
 }
+
