@@ -15,7 +15,7 @@ contract DIDRegistry {
     event DIDUpdated(string did, string newDocument);
     event CredentialAdded(string did, string credentialType, string vcHash);
 
-    function registerDID(string memory did, string memory didDocument) public {
+    function register(string memory did, string memory didDocument) public {
         require(!dids[did].isValid, "DID already registered");
         
         DID storage newDID = dids[did];
@@ -26,7 +26,7 @@ contract DIDRegistry {
         emit DIDRegistered(did, msg.sender);
     }
 
-    function updateDIDDocument(string memory did, string memory newDocument) public {
+    function updateDocument(string memory did, string memory newDocument) public {
         require(dids[did].isValid, "DID not registered");
         require(dids[did].owner == msg.sender, "Not DID owner");
         
@@ -48,7 +48,7 @@ contract DIDRegistry {
         emit CredentialAdded(did, credentialType, vcHash);
     }
 
-    function verifyDID(string memory did) public view returns (bool) {
+    function verify(string memory did) public view returns (bool) {
         return dids[did].isValid;
     }
 

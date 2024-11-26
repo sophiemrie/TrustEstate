@@ -400,7 +400,7 @@ contract TrustEstate {
         // Verify DIDs for all owners
         for (uint256 i = 0; i < owners.length; i++) {
             require(bytes(dids[owners[i].owner]).length > 0, "DID must be provided");
-            require(didRegistry.verifyDID(dids[owners[i].owner]), "Invalid DID");
+            require(didRegistry.verify(dids[owners[i].owner]), "Invalid DID");
             
             // Verify that the DID belongs to the owner's address
             require(

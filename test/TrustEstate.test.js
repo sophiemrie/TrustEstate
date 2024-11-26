@@ -9,25 +9,25 @@ describe("TrustEstate", function () {
     let addr1;
     let addr2;
     let addr3;
+    let government;
 
     beforeEach(async function () {
         // Deploy the DIDRegistry contract before each test
         DIDRegistry = await ethers.getContractFactory("DIDRegistry");
-        [owner, addr1, addr2, addr3] = await ethers.getSigners();
+        [owner, addr1, addr2, addr3, government] = await ethers.getSigners();
         didRegistry = await DIDRegistry.deploy();
         await didRegistry.waitForDeployment();
 
         // Deploy the contract before each test
         TrustEstate = await ethers.getContractFactory("TrustEstate");
-        [owner, addr1, addr2, addr3] = await ethers.getSigners();
-        landRegistry = await TrustEstate.deploy("TrustEstate", "TE", didRegistry.getAddress());
+        landRegistry = await TrustEstate.deploy("TrustEstate", "TE", government.address, didRegistry.getAddress());
         await landRegistry.waitForDeployment();
 
         // Set up DIDs for all test addresses
-        await didRegistry.connect(owner).registerDID("did:example:owner", "test doc");
-        await didRegistry.connect(addr1).registerDID("did:example:addr1", "test doc");
-        await didRegistry.connect(addr2).registerDID("did:example:addr2", "test doc");
-        await didRegistry.connect(addr3).registerDID("did:example:addr3", "test doc");
+        await didRegistry.connect(owner).register("did:example:owner", "test doc");
+        await didRegistry.connect(addr1).register("did:example:addr1", "test doc");
+        await didRegistry.connect(addr2).register("did:example:addr2", "test doc");
+        await didRegistry.connect(addr3).register("did:example:addr3", "test doc");
 
         await landRegistry.connect(owner).register("did:example:owner");
         await landRegistry.connect(addr1).register("did:example:addr1");
@@ -43,14 +43,26 @@ describe("TrustEstate", function () {
         const ipfsHash = "QmTestHash12345";
         const allowIndividualTransfer = true;
 
-        // await expect(
-            await landRegistry.mintPlot(owners, ipfsHash, allowIndividualTransfer)
-        // ).to.emit(landRegistry, "Transfer").withArgs(1, [], owners);
+        await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer)
 
         const plot = await landRegistry.getPlot(1);
         expect(plot.id).to.equal(1);
         expect(plot.ipfsHash).to.equal(ipfsHash);
         expect(plot.allowIndividualTransfer).to.equal(allowIndividualTransfer);
+    });
+
+    it("Should fail if non government tries to mint", async function () {
+        const owners = [
+            { owner: owner.address, share: 6000 },
+            { owner: addr1.address, share: 4000 }
+        ];
+        const ipfsHash = "QmTestHash12345";
+        const allowIndividualTransfer = true;
+
+        await expect(
+            landRegistry.mintPlot(owners, ipfsHash, allowIndividualTransfer)
+        ).to.be.revertedWith("Only the mandatory participant can mint plots")
+
     });
 
     it("Should create a split proposal", async function () {
@@ -61,7 +73,7 @@ describe("TrustEstate", function () {
         const ipfsHash = "QmTestHash12345";
         const allowIndividualTransfer = true;
 
-        await landRegistry.mintPlot(owners, ipfsHash, allowIndividualTransfer);
+        await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer);
 
         const split1 = {
             ipfsHash: "QmSplitHash1",
@@ -92,7 +104,7 @@ describe("TrustEstate", function () {
         const ipfsHash = "QmTestHash12345";
         const allowIndividualTransfer = true;
 
-        await landRegistry.mintPlot(owners, ipfsHash, allowIndividualTransfer);
+        await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer);
 
         const split1 = {
             ipfsHash: "QmSplitHash1",
@@ -131,7 +143,7 @@ describe("TrustEstate", function () {
         const ipfsHash = "QmTestHash12345";
         const allowIndividualTransfer = true;
 
-        await landRegistry.mintPlot(owners, ipfsHash, allowIndividualTransfer);
+        await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer);
 
         const split1 = {
             ipfsHash: "QmSplitHash1",
@@ -148,6 +160,7 @@ describe("TrustEstate", function () {
         await landRegistry.createSplitProposal(1, split1, split2, owners1, owners2);
         await landRegistry.connect(owner).approveProposal(1);
         await landRegistry.connect(addr1).approveProposal(1);
+        await landRegistry.connect(government).approveProposal(1);
 
         await expect(landRegistry.executeProposal(1))
             .to.emit(landRegistry, "ProposalExecuted")
@@ -162,7 +175,7 @@ describe("TrustEstate", function () {
         expect(plot2.allowIndividualTransfer).to.equal(true);
     });
 
-    it("should allow owner to merge two plots", async function () {
+    it("Should allow owner to merge two plots", async function () {
         const owners1 = [
             { owner: owner.address, share: 6000 },
             { owner: addr1.address, share: 4000 }
@@ -177,8 +190,8 @@ describe("TrustEstate", function () {
         const ipfsHash2 = "QmTestHash6789";
         const allowIndividualTransfer2 = true;
 
-        await landRegistry.mintPlot(owners1, ipfsHash1, allowIndividualTransfer1);
-        await landRegistry.mintPlot(owners2, ipfsHash2, allowIndividualTransfer2);
+        await landRegistry.connect(government).mintPlot(owners1, ipfsHash1, allowIndividualTransfer1);
+        await landRegistry.connect(government).mintPlot(owners2, ipfsHash2, allowIndividualTransfer2);
 
         const merge = {
             ipfsHash: "QmMergeHash",
@@ -194,6 +207,7 @@ describe("TrustEstate", function () {
         await landRegistry.connect(owner).approveProposal(1);
         await landRegistry.connect(addr1).approveProposal(1);
         await landRegistry.connect(addr2).approveProposal(1);
+        await landRegistry.connect(government).approveProposal(1);
 
         await expect(landRegistry.executeProposal(1))
             .to.emit(landRegistry, "ProposalExecuted")
@@ -212,7 +226,7 @@ describe("TrustEstate", function () {
         const ipfsHash = "QmTestHash12345";
         const allowIndividualTransfer = true;
 
-        await landRegistry.mintPlot(owners, ipfsHash, allowIndividualTransfer);
+        await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer);
 
         const transferOwners = [
             { owner: addr2.address, share: 9000 },

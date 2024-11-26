@@ -22,44 +22,44 @@ describe("DIDRegistry", function () {
 
   describe("DID Registration", function () {
     it("Should register a new DID", async function () {
-      await expect(registry.registerDID(testDID, testDocument))
+      await expect(registry.register(testDID, testDocument))
         .to.emit(registry, "DIDRegistered")
         .withArgs(testDID, owner.address);
 
-      const isValid = await registry.verifyDID(testDID);
+      const isValid = await registry.verify(testDID);
       expect(isValid).to.be.true;
     });
 
     it("Should not allow registering the same DID twice", async function () {
-      await registry.registerDID(testDID, testDocument);
+      await registry.register(testDID, testDocument);
       await expect(
-        registry.registerDID(testDID, testDocument)
+        registry.register(testDID, testDocument)
       ).to.be.revertedWith("DID already registered");
     });
   });
 
   describe("DID Document Updates", function () {
     beforeEach(async function () {
-      await registry.registerDID(testDID, testDocument);
+      await registry.register(testDID, testDocument);
     });
 
     it("Should update DID document", async function () {
       const newDocument = "QmNewTest456";
-      await expect(registry.updateDIDDocument(testDID, newDocument))
+      await expect(registry.updateDocument(testDID, newDocument))
         .to.emit(registry, "DIDUpdated")
         .withArgs(testDID, newDocument);
     });
 
     it("Should not allow non-owner to update DID document", async function () {
       await expect(
-        registry.connect(addr1).updateDIDDocument(testDID, "QmNewTest789")
+        registry.connect(addr1).updateDocument(testDID, "QmNewTest789")
       ).to.be.revertedWith("Not DID owner");
     });
   });
 
   describe("Verifiable Credentials", function () {
     beforeEach(async function () {
-      await registry.registerDID(testDID, testDocument);
+      await registry.register(testDID, testDocument);
     });
 
     it("Should add a verifiable credential", async function () {
@@ -92,13 +92,13 @@ describe("DIDRegistry", function () {
 
   describe("DID Verification", function () {
     it("Should return false for non-registered DID", async function () {
-      const isValid = await registry.verifyDID("did:example:nonexistent");
+      const isValid = await registry.verify("did:example:nonexistent");
       expect(isValid).to.be.false;
     });
 
     it("Should return true for registered DID", async function () {
-      await registry.registerDID(testDID, testDocument);
-      const isValid = await registry.verifyDID(testDID);
+      await registry.register(testDID, testDocument);
+      const isValid = await registry.verify(testDID);
       expect(isValid).to.be.true;
     });
   });
