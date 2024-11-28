@@ -101,7 +101,7 @@
       const abiResponseJson = await abiResponse.json();
       const abi = abiResponseJson.abi;
 
-      const addressResponse = await fetch("./contracts/addresses.json");
+      const addressResponse = await fetch("./addresses.json");
       const addresses = await addressResponse.json();
       const address = addresses.TrustEstate.address;
       if (!address) {

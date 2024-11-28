@@ -44,7 +44,7 @@ async function main() {
 }
 
 async function saveContractData(contractName, contractInstance) {
-    const filePath = path.join(__dirname, "../frontend/contracts/addresses.json");
+    const filePath = path.join(__dirname, "../frontend/addresses.json");
 
     // Load existing data or initialize a new object
     let contractData = {};
