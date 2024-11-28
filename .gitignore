@@ -1,3 +1,6 @@
+frontend/contracts/addresses.json
+frontend/artifacts
+
 .deps/
 
 # Hardhat files

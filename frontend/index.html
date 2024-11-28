@@ -97,12 +97,13 @@
   // Function to load ABI and contract address
   async function loadContractData() {
     try {
-      const abiResponse = await fetch("./TrustEstateAbi.json");
-      const abi = await abiResponse.json();
+      const abiResponse = await fetch("./artifacts/contracts/TrustEstate.sol/TrustEstate.json");
+      const abiResponseJson = await abiResponse.json();
+      const abi = abiResponseJson.abi;
 
-      const addressResponse = await fetch("./DeployedAddresses.json");
+      const addressResponse = await fetch("./contracts/addresses.json");
       const addresses = await addressResponse.json();
-      const address = addresses.TrustEstate;
+      const address = addresses.TrustEstate.address;
       if (!address) {
         throw new Error("TrustEstate address not found in DeployedAddresses.json");
       }
@@ -116,7 +117,10 @@
   // Function to load plots
   async function loadPlots() {
     try {
+      console.log("loadPlots");
       const { abi, address } = await loadContractData();
+      console.log("abi", abi);
+        console.log("address", address);
       const contract = new web3.eth.Contract(abi, address);
 
       console.log("Contract methods:", contract.methods);

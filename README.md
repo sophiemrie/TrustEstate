@@ -7,6 +7,14 @@ Repository for our Blockchain project "TrustEstate"
 npm install
 ```
 
+## Running the development environment
+
+```bash
+npm start
+```
+
+The frontend will be served at http://localhost:3000 and the hardhat node will be running at http://localhost:8545.
+
 ## Running tests
 
 ```bash
