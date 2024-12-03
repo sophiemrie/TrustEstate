@@ -36,16 +36,18 @@
     "web3": "^4.15.0"
   },
   "scripts": {
-    "copy-artifacts": "rimraf ./frontend/artifacts && cpx \"./artifacts/**/*\" ./frontend/artifacts",
+    "copy-artifacts": "rimraf ./frontend/assets/contracts/* && cpx \"./artifacts/contracts/TrustEstate.sol/TrustEstate.json\" ./frontend/src/assets/contracts",
     "build:contracts": "hardhat compile && npm run copy-artifacts",
     "build:contracts:watch": "nodemon -e sol,js --exec \"npm run build:contracts && npm run deploy\"",
     "test": "hardhat test",
     "test:watch": "nodemon -e sol,test.js --exec npm run test",
     "test:gas": "REPORT_GAS=true hardhat test",
     "start:hardhat": "hardhat node",
-    "start:frontend": "http-server -p 3000 ./frontend",
+    "start:frontend": "npm --prefix frontend run start",
+    "generate-types": "npm --prefix frontend run generate-types",
+    "generate-types:watch": "npm --prefix frontend run generate-types:watch",
     "hardhat:node": "hardhat node",
     "deploy": "wait-on http://127.0.0.1:8545 && hardhat run --network localhost scripts/deploy.js",
-    "start": "concurrently \"npm:build:contracts:watch\" \"npm:start:frontend\" \"npm:hardhat:node\""
+    "start": "concurrently \"npm:build:contracts:watch\" \"npm:start:frontend\" \"npm:generate-types:watch\" \"npm:hardhat:node\""
   }
 }

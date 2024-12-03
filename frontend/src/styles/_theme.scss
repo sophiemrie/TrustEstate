@@ -1,0 +1,62 @@
+@use '@angular/material' as mat;
+
+@use '../app/app.component-theme' as app-component;
+
+@include mat.core();
+
+$dark-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$rose-palette,
+    tertiary: mat.$blue-palette,
+  )
+));
+
+$light-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$rose-palette,
+    tertiary: mat.$blue-palette,
+  )
+));
+
+$app-map-dark: (
+    --app-background: mat.get-theme-color($dark-theme, surface),
+);
+
+$app-map-light: (
+    --app-background: mat.get-theme-color($light-theme, surface),
+);
+
+$app-map: (
+    --app-topbar-height: 64px,
+    --app-footer-height: 10em,
+);
+
+@mixin app-all-component-themes($theme) {
+  @include app-component.theme($theme);
+}
+
+@mixin app-all-component-colors($theme) {
+  @include app-component.color($theme);
+}
+
+html {
+  @include mat.all-component-themes($dark-theme);
+  @include app-all-component-themes($dark-theme);
+
+  @media (prefers-color-scheme: light) {
+    @include mat.all-component-colors($light-theme);
+    @include app-all-component-colors($light-theme);
+  }
+}
+
+.dark-theme {
+    @include spread-map($app-map-light);
+    @include spread-map($app-map);
+}
+
+.light-theme {
+    @include spread-map($app-map-light);
+    @include spread-map($app-map);
+}

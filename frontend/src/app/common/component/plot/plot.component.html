@@ -1,0 +1,12 @@
+<div class="container">
+  <form>
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input type="number" matInput [formControl]="plotFormControl">
+    </mat-form-field>
+  </form>
+  <button mat-flat-button color="primary" (click)="getPlot()">Submit</button>
+</div>
+@if (currentPlot() !== undefined) {
+  <app-plot-card [plot]="currentPlot()!"></app-plot-card>
+}

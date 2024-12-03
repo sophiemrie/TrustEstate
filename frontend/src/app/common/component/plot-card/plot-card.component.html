@@ -1,0 +1,16 @@
+<mat-card class="card">
+  <mat-card-header>
+    <mat-card-title>Plot {{plot().id}}</mat-card-title>
+    <mat-card-subtitle>Owner: </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p>IPFS Hash: {{plot().ipfsHash}}</p>
+    <p>Allow Individual Transfer:
+    @if (plot().allowIndividualTransfer) {
+      <mat-icon>check_circle</mat-icon>
+    } @else {
+      <mat-icon>cancel</mat-icon>
+    }
+    </p>
+  </mat-card-content>
+</mat-card>

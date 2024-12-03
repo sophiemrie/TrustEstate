@@ -1,0 +1,10 @@
+/* .spacer { */
+/*     height: calc(var(--app-topbar-height)); */
+/* } */
+
+.app-background {
+    margin: 0 auto;
+    /* min-height: calc(100vh - var(--app-topbar-height) - var(--app-footer-height)); */
+    min-height: 100vh;
+}
+

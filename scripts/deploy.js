@@ -40,11 +40,21 @@ async function main() {
     await saveContractData("DIDRegistry", didRegistry);
     await saveContractData("TrustEstate", landRegistry);
 
+    const owners = [
+        { owner: owner.address, share: 6000 },
+        { owner: addr1.address, share: 4000 }
+    ];
+    const ipfsHash = "QmTestHash12345";
+    const allowIndividualTransfer = true;
+
+    await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer)
+
     console.log("Deployment and setup complete!");
+
 }
 
 async function saveContractData(contractName, contractInstance) {
-    const filePath = path.join(__dirname, "../frontend/addresses.json");
+    const filePath = path.join(__dirname, "../frontend/src/assets/addresses/addresses.json");
 
     // Load existing data or initialize a new object
     let contractData = {};

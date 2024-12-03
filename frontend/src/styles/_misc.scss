@@ -1,0 +1,18 @@
+@use "sass:math";
+@use '@angular/material' as mat;
+
+// @import 'mediaq';
+
+html, body {
+    width: 100%;
+    margin: 0;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    z-index: -3;
+    position: absolute;
+}
