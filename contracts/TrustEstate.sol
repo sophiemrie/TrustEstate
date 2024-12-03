@@ -124,7 +124,7 @@ contract TrustEstate {
                 ownerIndex = i;
             }
         }
-
+        // FIXME: Handle case an existing owner is transferred to another owner
         if (shareOfCurrentOwner == amount) {
             _owners[plotId][ownerIndex].owner = to;
         } else {
@@ -318,6 +318,10 @@ contract TrustEstate {
 
     function _hasToApprove(uint256 proposalId, address account) public view returns (bool) {
         return _contains(proposals[proposalId].hasToApprove, account);
+    }
+
+    function getOwnership(uint256 tokenId) external view returns (Ownership[] memory) {
+        return _owners[tokenId];
     }
 
     function _getOwners(uint256 tokenId) public view returns (address[] memory) {

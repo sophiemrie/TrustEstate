@@ -1,11 +1,40 @@
 @use "sass:math";
 @use '@angular/material' as mat;
 
-// @import 'mediaq';
-
 html, body {
+    min-height: 100%;
+    height: 100%;
     width: 100%;
-    margin: 0;
+    // overflow: hidden !important;
+
+    line-height: normal;
+    font-family: "Source Sans Pro";
+
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    // touch screen disable scroll down refresh
+    overscroll-behavior: contain;
+    // overflow-x: hidden;
+}
+// :is(div, span, h1, h2, h3, p) :not(mat-icon) {
+//
+//     transition: background 225ms ease-in-out, color 225ms ease-in-out;
+// }
+h1, h2, h3, p {
+    transition: color 225ms ease-in-out;
+}
+
+div, span, h1, h2, h3, p {
+    transition: background 225ms ease-in-out
+}
+
+mat-table {
+    transition: background-color 225ms ease-in-out
 }
 
 html {
@@ -15,4 +44,9 @@ html {
 body {
     z-index: -3;
     position: absolute;
+}
+
+// to remove lin in mat input fields
+.mdc-notched-outline__notch {
+    border-right: 0 !important;
 }

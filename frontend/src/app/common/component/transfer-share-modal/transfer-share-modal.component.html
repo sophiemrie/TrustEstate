@@ -1,0 +1,21 @@
+<h2 mat-dialog-title>Title</h2>
+
+<mat-dialog-content>
+    <form [formGroup]="form" class="edit-link-dialog" (keyup.enter)="onSubmitClick()">
+        <div class="title-url">
+            <mat-form-field appearance="outline">
+                <mat-label>Recipient</mat-label>
+                <input matInput formControlName="to" cdkFocusInitial/>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+                <mat-label>Amount</mat-label>
+                <input type="number" matInput formControlName="amount"/>
+            </mat-form-field>
+        </div>
+    </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close aria-label="Cancel">Cancel</button>
+    <button mat-flat-button color="primary" aria-label="Transfer" (click)="onSubmitClick()">Transfer</button>
+</mat-dialog-actions>

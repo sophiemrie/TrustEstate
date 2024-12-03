@@ -12,5 +12,7 @@
       <mat-icon>cancel</mat-icon>
     }
     </p>
+
+    <app-plot-owners-table [owners]="owners()" [plotId]="plot().id" [allowIndividualTransfer]="plot().allowIndividualTransfer"></app-plot-owners-table>
   </mat-card-content>
 </mat-card>

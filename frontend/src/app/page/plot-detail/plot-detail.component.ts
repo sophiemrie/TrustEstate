@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
 import { PlotComponent } from '../../common/component/plot/plot.component';
 
-
 @Component({
-  selector: 'app-home',
+  selector: 'app-plot-detail',
   standalone: true,
   imports: [
-    PlotComponent
+    PlotComponent,
   ],
-  templateUrl: './home.component.html',
-  styleUrl: './home.component.scss'
+  templateUrl: './plot-detail.component.html',
+  styleUrl: './plot-detail.component.scss'
 })
-export class HomeComponent {
+export class PlotDetailComponent {
+
 }

@@ -6,6 +6,7 @@ import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { EthereumService } from '../../service/ethereum.service';
 import { Plot } from '../../type/plot.type';
 import { PlotCardComponent } from '../plot-card/plot-card.component';
+import { Ownership } from '../../type/ownership.type';
 
 @Component({
   selector: 'app-plot',
@@ -25,7 +26,8 @@ import { PlotCardComponent } from '../plot-card/plot-card.component';
 export class PlotComponent {
   plotFormControl = new FormControl<number | null>(null);
 
-  currentPlot = signal<Plot | undefined>(undefined);
+  plot = signal<Plot | undefined>(undefined);
+  owners = signal<Ownership[] | undefined>(undefined);
 
   constructor(
     private ethereumService: EthereumService
@@ -35,7 +37,9 @@ export class PlotComponent {
     // check if plot Form value is a number
     if (this.plotFormControl.value === undefined || this.plotFormControl.value === null) return;
 
-    this.currentPlot.set(await this.ethereumService.getPlot(this.plotFormControl.value));
-    console.log(this.currentPlot());
+    this.plot.set(await this.ethereumService.getPlot(this.plotFormControl.value));
+    this.owners.set(await this.ethereumService.getOwnership(this.plotFormControl.value));
+    console.log(this.plot());
+    console.log(this.owners());
   }
 }

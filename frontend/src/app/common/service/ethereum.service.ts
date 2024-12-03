@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import Web3, { Contract, ContractAbi } from 'web3';
 import TrustEstate from '../../../contracts/TrustEstate';
 import { Plot } from '../type/plot.type';
+import { Ownership } from '../type/ownership.type';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +19,11 @@ export class EthereumService {
   ) {
     this.init().catch((error) => console.error('Initialization failed:', error));
   }
+
+  getAccounts(): string[] {
+    return this.accounts;
+  }
+
   async connectMetaMask(): Promise<void> {
     if (typeof window.ethereum !== "undefined") {
       try {
@@ -48,13 +54,56 @@ export class EthereumService {
     return address.TrustEstate.address;
   }
 
-  async test() {
-    if (this.contract === undefined) return;
-    console.log(await this.contract.methods.getPlot(1).call());
-  }
-
   async getPlot(id: number): Promise<Plot | undefined> {
     if (this.contract === undefined) return;
     return await this.contract.methods.getPlot(id).call();
   }
+
+  async getOwnership(id: number): Promise<Ownership[] | undefined> {
+    if (this.contract === undefined) return;
+    return await this.contract.methods.getOwnership(id).call();
+  }
+
+  async transferOwnershipShare(id: number, share: number, to: string): Promise<void> {
+    if (this.contract === undefined) return;
+    await this.contract.methods.transferOwnershipShare(this.accounts[0], to, id, share).call()
+  }
+
+  async createSplitProposal(id: number, split: number, to: string): Promise<void> {
+    throw new Error("Not implemented");
+    if (this.contract === undefined) return;
+    await this.contract.methods.createSplitProposal().call() // FIXME
+  }
+
+  async createMergeProposal(id: number, to: string): Promise<void> {
+    throw new Error("Not implemented");
+    if (this.contract === undefined) return;
+    await this.contract.methods.createMergeProposal().call() // FIXME
+  }
+
+  async createTransferProposal(id: number, to: string): Promise<void> {
+    throw new Error("Not implemented");
+    if (this.contract === undefined) return;
+    await this.contract.methods.createTransferProposal().call() // FIXME
+  }
+
+  async register(did: string, didDocument: string): Promise<void> {
+    throw new Error("Not implemented");
+    if (this.contract === undefined) return;
+    await this.contract.methods.register().call() // FIXME
+  }
+
+  async approveProposal(id: number): Promise<void> {
+    throw new Error("Not implemented");
+    if (this.contract === undefined) return;
+    await this.contract.methods.approveProposal().call() // FIXME
+  }
+
+  async mintPlot(owners: Ownership[], ipfsHash: string, allowIndividualTransfer: boolean): Promise<void> {
+    throw new Error("Not implemented");
+    if (this.contract === undefined) return;
+    await this.contract.methods.mintPlot().call() // FIXME
+  }
+
+
 }
