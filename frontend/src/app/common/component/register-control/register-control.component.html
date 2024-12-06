@@ -1,0 +1,9 @@
+<form [formGroup]="form">
+  <div class="controls">
+    <mat-form-field appearance="outline">
+      <mat-label>DID</mat-label>
+      <input matInput formControlName="did">
+    </mat-form-field>
+    <button mat-flat-button color="primary" (click)="register()">Register</button>
+  </div>
+</form>

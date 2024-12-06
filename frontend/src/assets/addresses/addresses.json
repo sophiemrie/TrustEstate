@@ -1,6 +1,6 @@
 {
   "DIDRegistry": {
-    "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "address": "0x5c74c94173F05dA1720953407cbb920F3DF9f887",
     "abi": [
       "event CredentialAdded(string did, string credentialType, string vcHash)",
       "event DIDRegistered(string did, address owner)",
@@ -15,7 +15,7 @@
     ]
   },
   "TrustEstate": {
-    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "address": "0x720472c8ce72c2A2D711333e064ABD3E6BbEAdd3",
     "abi": [
       "constructor(string name_, string symbol_, address madatoryPartitcipant, address didRegistryAddress)",
       "event ProposalApproved(uint256 plotId, uint256 proposalId, address approver)",
@@ -36,10 +36,11 @@
       "function getOwnership(uint256 tokenId) view returns ((address owner, uint256 share)[])",
       "function getPlot(uint256 id) view returns ((uint256 id, string ipfsHash, bool allowIndividualTransfer))",
       "function getPlotCount() view returns (uint256)",
+      "function getProposals() view returns ((uint256 proposalId, uint256 plotId, address[] hasToApprove, address[] approvers, uint8 proposalType, bool executed, bytes proposalData)[])",
       "function mintPlot((address owner, uint256 share)[] owners, string ipfsHash, bool allowIndividualTransfer)",
       "function proposals(uint256 proposalId) view returns (uint256 plotId, uint8 proposalType, bool executed, bytes proposalData)",
       "function register(string did)",
-      "function transferOwnershipShare(address from, address to, uint256 plotId, uint256 amount)"
+      "function transferOwnershipShare(address to, uint256 plotId, uint256 amount)"
     ]
   }
 }

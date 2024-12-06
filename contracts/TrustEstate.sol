@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./DIDRegistry.sol";
+import "hardhat/console.sol"; //TODO: Remove
 
 contract TrustEstate {
     struct Ownership {
@@ -18,6 +19,16 @@ contract TrustEstate {
         address[] hasToApprove;         // List of people who have to approve
         address[] approvers;         // List of owners who approved
         mapping(address => bool) approvals; // Tracks approvals
+        ProposalType proposalType;   // Type of proposal (e.g., Split, Merge)
+        bool executed;               // Whether the action is executed
+        bytes proposalData;          // Encoded data specific to the proposal type
+    }
+
+    struct ProposalView {
+        uint256 proposalId;
+        uint256 plotId;              // Plot ID for action
+        address[] hasToApprove;      // List of people who have to approve
+        address[] approvers;         // List of owners who approved
         ProposalType proposalType;   // Type of proposal (e.g., Split, Merge)
         bool executed;               // Whether the action is executed
         bytes proposalData;          // Encoded data specific to the proposal type
@@ -97,6 +108,24 @@ contract TrustEstate {
         return _plots[id];
     }
 
+    function getProposals() external view returns (ProposalView[] memory) {
+        ProposalView[] memory ret = new ProposalView[](_proposalCount);
+        for (uint i = 0; i < _proposalCount; i++) {
+            Proposal storage proposal = proposals[i];
+            ret[i] = ProposalView({
+                proposalId: i,
+                plotId: proposal.plotId,
+                hasToApprove: proposal.hasToApprove,
+                approvers: proposal.approvers,
+                proposalType: proposal.proposalType,
+                executed: proposal.executed,
+                proposalData: proposal.proposalData
+            });
+            console.log("test", proposal.plotId);
+        }
+        return ret;
+    }
+
     function mintPlot(
         Ownership[] calldata owners,
         string calldata ipfsHash,
@@ -111,16 +140,16 @@ contract TrustEstate {
         _mint(plot, owners);
     }
 
-    function transferOwnershipShare(address from, address to, uint256 plotId, uint256 amount) public {
+    function transferOwnershipShare(address to, uint256 plotId, uint256 amount) public {
         require(_plots[plotId].id != 0, "LandToken: Transfer for nonexistent token");
-        require(_isOwner(plotId, from), "Not an owner");
-        uint256 shareOfCurrentOwner = _getShare(plotId, from);
-        require(shareOfCurrentOwner > amount, "Not enough shares");
+        require(_isOwner(plotId, msg.sender), "Not an owner");
+        uint256 shareOfCurrentOwner = _getShare(plotId, msg.sender);
+        require(amount > shareOfCurrentOwner, "Not enough shares");
         require(_plots[plotId].allowIndividualTransfer, "Plot is not allowed to be individually transferred");
 
         uint256 ownerIndex = 0;
         for (uint256 i = 0; i < _owners[plotId].length; i++) {
-            if (_owners[plotId][i].owner == from) {
+            if (_owners[plotId][i].owner == msg.sender) {
                 ownerIndex = i;
             }
         }
@@ -142,9 +171,15 @@ contract TrustEstate {
         Ownership[] memory owners1,
         Ownership[] memory owners2
     ) external {
+        console.log("createSplitProposal", plotId, msg.sender);
+        for (uint i = 0; i < _owners[plotId].length; i++) {
+            console.log(_owners[plotId][i].owner);
+        }
         require(_isOwner(plotId, msg.sender), "Not an owner");
         _checkOwners(owners1);
         _checkOwners(owners2);
+
+        console.log("works here");
 
         SplitProposalData memory splitData = SplitProposalData({
             split1: split1,
@@ -153,10 +188,13 @@ contract TrustEstate {
             owners2: owners2
         });
         bytes memory encodedData = abi.encode(splitData);
+        console.log("works here");
 
         address[] memory hasToApprove = _addMandatoryParticipant(_getOwners(plotId));
+        console.log("works here");
 
         _createProposal(plotId, ProposalType.Split, hasToApprove, encodedData);
+        console.log("works here");
     }
 
     function getPlotCount() public view returns (uint256) {
@@ -199,7 +237,6 @@ contract TrustEstate {
     function _createProposal(uint256 plotId, ProposalType proposalType, address[] memory hasToApprove, bytes memory proposalData) internal {
         require(_isOwner(plotId, msg.sender), "Not an owner");
 
-        _proposalCount++;
         Proposal storage proposal = proposals[_proposalCount];
         proposal.plotId = plotId;
         proposal.proposalType = proposalType;
@@ -207,7 +244,12 @@ contract TrustEstate {
         proposal.hasToApprove = hasToApprove;
         proposal.executed = false;
 
+
+        console.log("proposal created", _proposalCount, plotId);
+
         emit ProposalCreated(plotId, _proposalCount);
+
+        _proposalCount++;
     }
 
     function approveProposal(uint256 proposalId) external {
@@ -283,7 +325,6 @@ contract TrustEstate {
     function _mint(PlotDetails memory plotDetails, Ownership[] memory owners) internal {
         _checkOwners(owners);
 
-        _plotCount++;
 
         Plot storage newPlot = _plots[_plotCount];
         newPlot.id = _plotCount;
@@ -299,6 +340,9 @@ contract TrustEstate {
         }
 
         emit Transfer(_plotCount, new Ownership[](0), owners);
+
+        _plotCount++;
+
     }
 
     // Internal helper to check ownership

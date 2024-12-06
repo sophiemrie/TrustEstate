@@ -1,0 +1,15 @@
+table {
+  width: 100%;
+}
+
+.approver-text {
+  display: inline-flex;
+  gap: 1em;
+  align-items: center;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}

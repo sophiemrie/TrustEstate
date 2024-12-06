@@ -1,0 +1,10 @@
+<h2 mat-dialog-title>Create Transfer Proposal</h2>
+
+<mat-dialog-content>
+  <app-owner-control [(owners)]="owners"></app-owner-control>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close aria-label="Cancel">Cancel</button>
+    <button mat-flat-button color="primary" aria-label="Transfer" (click)="onSubmitClick()">Transfer</button>
+</mat-dialog-actions>

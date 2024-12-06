@@ -1,4 +1,4 @@
-<table mat-table [dataSource]="dataSource()" class="mat-elevation-z3">
+<table mat-table [dataSource]="dataSource()" class="table">
 
   <ng-container matColumnDef="owner">
     <th mat-header-cell *matHeaderCellDef> Owner </th>
@@ -13,7 +13,7 @@
   <ng-container matColumnDef="action">
     <th mat-header-cell *matHeaderCellDef></th>
     <td mat-cell *matCellDef="let element">
-      <button mat-icon-button (click)="transferOwnership(element)" [disabled]="!element.isMe">
+      <button mat-icon-button (click)="transferOwnership(element)" [disabled]="!element.isMe" aria-label="Transfer Ownership">
         <mat-icon>send</mat-icon>
       </button>
     </td>

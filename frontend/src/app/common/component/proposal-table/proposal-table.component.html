@@ -1,0 +1,60 @@
+<table mat-table multiTemplateDataRows [dataSource]="dataSource()">
+  <ng-container matColumnDef="proposalId">
+    <th mat-header-cell *matHeaderCellDef> Proposal ID </th>
+    <td mat-cell *matCellDef="let element"> {{element.proposalId}} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="plotId">
+    <th mat-header-cell *matHeaderCellDef> Plot ID </th>
+    <td mat-cell *matCellDef="let element"> {{element.plotId}} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="proposalType">
+    <th mat-header-cell *matHeaderCellDef> Proposal Type </th>
+    <td mat-cell *matCellDef="let element"> {{element.proposalTypeName}} </td>
+  </ng-container>
+
+  <ng-container matColumnDef="status">
+    <th mat-header-cell *matHeaderCellDef> Status </th>
+    <td mat-cell *matCellDef="let element">
+      @if (element.executed) {
+        <mat-icon>check_circle</mat-icon>
+      } @else {
+        <mat-icon>pending</mat-icon>
+      }
+    </td>
+  </ng-container>
+
+
+  <ng-container matColumnDef="action">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let element">
+      <mat-icon [@expandButton]="element == expandedElement ? 'expanded' : 'collapsed'">
+        keyboard_arrow_down
+      </mat-icon>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="expandedDetail">
+    <td mat-cell *matCellDef="let element" [attr.colspan]="displayedColumns.length">
+      <div class="example-element-detail"
+        [@expandRow]="element == expandedElement ? 'expanded' : 'collapsed'">
+        <div class="example-element-diagram">
+          <mat-card appearance="outlined" class="card">
+            <mat-card-content>
+              <app-proposal-detail [proposal]="element"></app-proposal-detail>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let element; columns: displayedColumns"
+      class="example-element-row"
+      [class.example-expanded-row]="expandedElement === element"
+      (click)="expandedElement = expandedElement === element ? null : element">
+  </tr>
+  <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="example-detail-row"></tr>
+</table>

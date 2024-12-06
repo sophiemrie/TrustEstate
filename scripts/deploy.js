@@ -40,6 +40,8 @@ async function main() {
     await saveContractData("DIDRegistry", didRegistry);
     await saveContractData("TrustEstate", landRegistry);
 
+
+    // Create Test data
     const owners = [
         { owner: owner.address, share: 6000 },
         { owner: addr1.address, share: 4000 }
@@ -48,6 +50,23 @@ async function main() {
     const allowIndividualTransfer = true;
 
     await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer)
+
+    const split1 = {
+        ipfsHash: "QmSplitHash1",
+        allowIndividualTransfer: true
+    };
+    const split2 = {
+        ipfsHash: "QmSplitHash2",
+        allowIndividualTransfer: true
+    };
+
+    const owners1 = [{ owner: owner.address, share: 10000 }];
+    const owners2 = [{ owner: addr1.address, share: 10000 }];
+
+    await landRegistry.connect(addr1).createSplitProposal(0, split1, split2, owners1, owners2);
+    await landRegistry.connect(addr1).createSplitProposal(0, split1, split2, owners1, owners2);
+    await landRegistry.connect(addr1).createSplitProposal(0, split1, split2, owners1, owners2);
+    await landRegistry.connect(addr1).createSplitProposal(0, split1, split2, owners1, owners2);
 
     console.log("Deployment and setup complete!");
 

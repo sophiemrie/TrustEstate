@@ -1,0 +1,19 @@
+<form [formGroup]="form">
+  <div class="controls">
+    <mat-form-field appearance="outline">
+      <mat-label>IPFS Hash</mat-label>
+      <input matInput formControlName="ipfsHash">
+    </mat-form-field>
+    <mat-slide-toggle matInput formControlName="allowIndividualTransfer">Allow Individual Transfer</mat-slide-toggle>
+
+    <mat-card appearance="outlined" class="card">
+      <mat-card-header>
+        <mat-card-title>Add Owners</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <app-owner-control [(owners)]="owners"></app-owner-control>
+      </mat-card-content>
+    </mat-card>
+    <button mat-flat-button color="primary" (click)="mintPlot()">Mint Plot</button>
+  </div>
+</form>

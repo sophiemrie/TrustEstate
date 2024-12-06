@@ -1,22 +1,23 @@
 @use '@angular/material' as mat;
 
 @use '../app/app.component-theme' as app-component;
+@use '../app/common/component/topbar/topbar.component-theme' as topbar-component;
 
 @include mat.core();
 
 $dark-theme: mat.define-theme((
   color: (
     theme-type: dark,
-    primary: mat.$rose-palette,
-    tertiary: mat.$blue-palette,
+    primary: mat.$spring-green-palette,
+    tertiary: mat.$azure-palette,
   )
 ));
 
 $light-theme: mat.define-theme((
   color: (
     theme-type: light,
-    primary: mat.$rose-palette,
-    tertiary: mat.$blue-palette,
+    primary: mat.$spring-green-palette,
+    tertiary: mat.$azure-palette,
   )
 ));
 
@@ -35,10 +36,12 @@ $app-map: (
 
 @mixin app-all-component-themes($theme) {
   @include app-component.theme($theme);
+  @include topbar-component.theme($theme);
 }
 
 @mixin app-all-component-colors($theme) {
   @include app-component.color($theme);
+  @include topbar-component.color($theme);
 }
 
 html {

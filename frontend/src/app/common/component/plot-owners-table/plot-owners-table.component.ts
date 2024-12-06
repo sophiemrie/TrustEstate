@@ -30,8 +30,7 @@ export class PlotOwnersTableComponent implements OnDestroy {
   }));
   dataSource = computed(() => {
     const owners = this.ownersIsMe();
-    const table = new MatTableDataSource(owners);
-    return table;
+    return new MatTableDataSource(owners);
   });
   totalShares = computed(() => this.owners().reduce((acc, curr) => acc + BigInt(curr.share), BigInt(0)));
   displayedColumns = ['owner', 'share'];
@@ -57,9 +56,11 @@ export class PlotOwnersTableComponent implements OnDestroy {
     const dialogRef = this.dialog.open(TransferShareModalComponent, { data: {
       amount: ownership.share,
       to: ''
-    } });
+    }});
 
     const dialogRefSubscription = dialogRef.afterClosed().subscribe(formResult => {
+      if(!formResult) return;
+
       const transferSubscription = from(this.ethereumService.transferOwnershipShare(this.plotId(), formResult.amount, formResult.to)).subscribe();
       this.subscriptions.push(transferSubscription);
     });

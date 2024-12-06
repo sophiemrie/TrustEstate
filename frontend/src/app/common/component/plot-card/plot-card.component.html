@@ -1,4 +1,4 @@
-<mat-card class="card">
+<mat-card appearance="outlined" class="card">
   <mat-card-header>
     <mat-card-title>Plot {{plot().id}}</mat-card-title>
     <mat-card-subtitle>Owner: </mat-card-subtitle>
@@ -15,4 +15,9 @@
 
     <app-plot-owners-table [owners]="owners()" [plotId]="plot().id" [allowIndividualTransfer]="plot().allowIndividualTransfer"></app-plot-owners-table>
   </mat-card-content>
+  <mat-card-actions>
+    <button mat-button (click)="createSplitProposal()">Split Proposal</button>
+    <button mat-button (click)="createMergeProposal()">Merge Proposal</button>
+    <button mat-button (click)="createTransferProposal()">Transfer Proposal</button>
+  </mat-card-actions>
 </mat-card>

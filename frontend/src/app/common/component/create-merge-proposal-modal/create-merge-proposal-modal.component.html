@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Create Split Proposal</h2>
+
+<mat-dialog-content class="container">
+  <form [formGroup]="form">
+    <div class="controls">
+      <mat-form-field appearance="outline">
+        <mat-label>Second Plot ID</mat-label>
+        <input matInput formControlName="plotId">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>IPFS Hash</mat-label>
+        <input matInput formControlName="ipfsHash">
+      </mat-form-field>
+      <mat-slide-toggle matInput formControlName="allowIndividualTransfer">Allow Individual Transfer</mat-slide-toggle>
+
+      <mat-card appearance="outlined" class="card">
+        <mat-card-header>
+          <mat-card-title>Add Owners</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <app-owner-control [(owners)]="owners"></app-owner-control>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close aria-label="Cancel">Cancel</button>
+  <button mat-flat-button color="primary" aria-label="Transfer" (click)="onSubmitClick()">Transfer</button>
+</mat-dialog-actions>
