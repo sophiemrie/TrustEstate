@@ -5,6 +5,7 @@ Repository for our Blockchain project "TrustEstate"
 
 ```bash
 npm install
+npm --prefix frontend install
 ```
 
 ## Running the development environment
