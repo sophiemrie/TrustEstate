@@ -4,6 +4,7 @@ import { MatRippleModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule } from '@angular/router';
+import { LogoComponent } from '../logo/logo.component';
 
 @Component({
   selector: 'app-topbar',
@@ -14,6 +15,7 @@ import { RouterModule } from '@angular/router';
     MatIconModule,
     MatRippleModule,
     RouterModule,
+    LogoComponent,
   ],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss',

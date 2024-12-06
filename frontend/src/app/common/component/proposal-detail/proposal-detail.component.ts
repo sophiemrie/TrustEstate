@@ -38,7 +38,7 @@ export class ProposalDetailComponent {
   ) { }
 
   approve() {
-    this.ethereumService.approveProposal(this.proposal().plotId);
+    this.ethereumService.approveProposal(this.proposal().proposalId);
   }
 
 }

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./DIDRegistry.sol";
-import "hardhat/console.sol"; //TODO: Remove
+import "hardhat/console.sol"; // FIXME: Remove
 
 contract TrustEstate {
     struct Ownership {
@@ -61,6 +61,7 @@ contract TrustEstate {
         uint256 id; // Unique governmental ID
         string ipfsHash; // Hash of geospatial data stored on IPFS
         bool allowIndividualTransfer; // Whether or not the land can be sold individually
+        bool exists;
     }
 
     // Token name
@@ -121,7 +122,6 @@ contract TrustEstate {
                 executed: proposal.executed,
                 proposalData: proposal.proposalData
             });
-            console.log("test", proposal.plotId);
         }
         return ret;
     }
@@ -141,10 +141,11 @@ contract TrustEstate {
     }
 
     function transferOwnershipShare(address to, uint256 plotId, uint256 amount) public {
-        require(_plots[plotId].id != 0, "LandToken: Transfer for nonexistent token");
+        require(_plots[plotId].exists, "Transfer for nonexistent token");
         require(_isOwner(plotId, msg.sender), "Not an owner");
         uint256 shareOfCurrentOwner = _getShare(plotId, msg.sender);
-        require(amount > shareOfCurrentOwner, "Not enough shares");
+        console.log("shareOfCurrentOwner", shareOfCurrentOwner, amount);
+        require(shareOfCurrentOwner >= amount, "Not enough shares");
         require(_plots[plotId].allowIndividualTransfer, "Plot is not allowed to be individually transferred");
 
         uint256 ownerIndex = 0;
@@ -171,15 +172,9 @@ contract TrustEstate {
         Ownership[] memory owners1,
         Ownership[] memory owners2
     ) external {
-        console.log("createSplitProposal", plotId, msg.sender);
-        for (uint i = 0; i < _owners[plotId].length; i++) {
-            console.log(_owners[plotId][i].owner);
-        }
         require(_isOwner(plotId, msg.sender), "Not an owner");
         _checkOwners(owners1);
         _checkOwners(owners2);
-
-        console.log("works here");
 
         SplitProposalData memory splitData = SplitProposalData({
             split1: split1,
@@ -188,13 +183,10 @@ contract TrustEstate {
             owners2: owners2
         });
         bytes memory encodedData = abi.encode(splitData);
-        console.log("works here");
 
         address[] memory hasToApprove = _addMandatoryParticipant(_getOwners(plotId));
-        console.log("works here");
 
         _createProposal(plotId, ProposalType.Split, hasToApprove, encodedData);
-        console.log("works here");
     }
 
     function getPlotCount() public view returns (uint256) {
@@ -244,9 +236,6 @@ contract TrustEstate {
         proposal.hasToApprove = hasToApprove;
         proposal.executed = false;
 
-
-        console.log("proposal created", _proposalCount, plotId);
-
         emit ProposalCreated(plotId, _proposalCount);
 
         _proposalCount++;
@@ -264,10 +253,18 @@ contract TrustEstate {
 
         emit ProposalApproved(proposal.plotId, proposalId, msg.sender);
 
-        // TODO: Check if proposal is ready to be executed and execute it
+        bool canExecute = true;
+        for (uint256 i = 0; i < proposal.hasToApprove.length; i++) {
+            if (!_contains(proposal.approvers, proposal.hasToApprove[i])) {
+                canExecute = false;
+            }
+        }
+        if (canExecute) {
+            executeProposal(proposalId);
+        }
     }
 
-    function executeProposal(uint256 proposalId) external {
+    function executeProposal(uint256 proposalId) public {
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.executed, "Proposal already executed");
 
@@ -330,6 +327,7 @@ contract TrustEstate {
         newPlot.id = _plotCount;
         newPlot.ipfsHash = plotDetails.ipfsHash;
         newPlot.allowIndividualTransfer = plotDetails.allowIndividualTransfer;
+        newPlot.exists = true;
 
         _plots[_plotCount] = newPlot;
 

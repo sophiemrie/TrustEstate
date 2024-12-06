@@ -4,3 +4,13 @@
   gap: 1em;
   margin: 1em 0;
 }
+
+table {
+  width: 100%;
+}
+
+.conataner {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
