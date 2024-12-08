@@ -90,12 +90,6 @@ export class EthereumService {
     console.log(result);
     return result;
   }
-    // function createSplitProposal(
-    //     uint256 plotId,
-    //     PlotDetails memory split1,
-    //     PlotDetails memory split2,
-    //     Ownership[] memory owners1,
-    //     Ownership[] memory owners2
 
   async createSplitProposal(id: number, split1: PlotData, split2: PlotData, owners1: Ownership[], owners2: Ownership[]): Promise<void> {
     await this.ensureInitialized();
@@ -133,4 +127,16 @@ export class EthereumService {
     await this.contract.methods.mintPlot(owners, ipfsHash, allowIndividualTransfer)
   }
 
+  async isVerified(): Promise<boolean> {
+    await this.ensureInitialized();
+    if (this.contract === undefined) throw new Error("Contract not initialized");
+    return await this.contract.methods.isVerified(this.accounts[0]).call();
+  }
+
+  async isRegistered(): Promise<boolean> {
+    console.log(this.accounts[0]);
+    await this.ensureInitialized();
+    if (this.contract === undefined) throw new Error("Contract not initialized");
+    return await this.contract.methods.isRegistered(this.accounts[0]).call();
+  }
 }

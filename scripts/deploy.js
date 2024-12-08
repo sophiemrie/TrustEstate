@@ -12,7 +12,7 @@ async function main() {
     console.log("DIDRegistry deployed to:", await didRegistry.getAddress());
 
     // Deploy TrustEstate contract
-    const [owner, addr1, addr2, addr3, government] = await ethers.getSigners();
+    const [government, owner, addr1, addr2, addr3] = await ethers.getSigners();
     const TrustEstate = await ethers.getContractFactory("TrustEstate");
     const landRegistry = await TrustEstate.deploy(
         "TrustEstate",
@@ -25,15 +25,15 @@ async function main() {
 
     // Register DIDs for test addresses
     console.log("Registering DIDs...");
-    await didRegistry.connect(owner).register("did:example:owner", "test doc");
-    await didRegistry.connect(addr1).register("did:example:addr1", "test doc");
-    await didRegistry.connect(addr2).register("did:example:addr2", "test doc");
-    await didRegistry.connect(addr3).register("did:example:addr3", "test doc");
+    await didRegistry.connect(owner).register("did:example:owner", "test doc", true);
+    await didRegistry.connect(addr1).register("did:example:addr1", "test doc", true);
+    await didRegistry.connect(addr2).register("did:example:addr2", "test doc", true);
+    await didRegistry.connect(addr3).register("did:example:addr3", "test doc", false);
 
     console.log("Linking DIDs to TrustEstate...");
     await landRegistry.connect(owner).register("did:example:owner");
     await landRegistry.connect(addr1).register("did:example:addr1");
-    await landRegistry.connect(addr2).register("did:example:addr2");
+    // await landRegistry.connect(addr2).register("did:example:addr2");
     await landRegistry.connect(addr3).register("did:example:addr3");
 
     // Save the deployed addresses and ABIs

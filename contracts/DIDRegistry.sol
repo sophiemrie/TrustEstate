@@ -15,13 +15,13 @@ contract DIDRegistry {
     event DIDUpdated(string did, string newDocument);
     event CredentialAdded(string did, string credentialType, string vcHash);
 
-    function register(string memory did, string memory didDocument) public {
+    function register(string memory did, string memory didDocument, bool isValid) public {
         require(!dids[did].isValid, "DID already registered");
         
         DID storage newDID = dids[did];
         newDID.owner = msg.sender;
         newDID.didDocument = didDocument;
-        newDID.isValid = true;
+        newDID.isValid = isValid;
         
         emit DIDRegistered(did, msg.sender);
     }

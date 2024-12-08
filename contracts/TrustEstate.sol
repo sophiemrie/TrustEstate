@@ -126,6 +126,14 @@ contract TrustEstate {
         return ret;
     }
 
+    function isVerified(address account) public view returns (bool) {
+        return didRegistry.verify(dids[account]);
+    }
+
+    function isRegistered(address account) public view returns (bool) {
+        return bytes(dids[account]).length > 0;
+    }
+
     function mintPlot(
         Ownership[] calldata owners,
         string calldata ipfsHash,
@@ -147,6 +155,7 @@ contract TrustEstate {
         console.log("shareOfCurrentOwner", shareOfCurrentOwner, amount);
         require(shareOfCurrentOwner >= amount, "Not enough shares");
         require(_plots[plotId].allowIndividualTransfer, "Plot is not allowed to be individually transferred");
+        require(didRegistry.verify(dids[to]), "Invalid DID");
 
         uint256 ownerIndex = 0;
         for (uint256 i = 0; i < _owners[plotId].length; i++) {

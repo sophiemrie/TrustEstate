@@ -4,6 +4,11 @@
       <mat-label>DID</mat-label>
       <input matInput formControlName="did">
     </mat-form-field>
-    <button mat-flat-button color="primary" (click)="register()">Register</button>
+    <button mat-flat-button color="primary" (click)="register()" [disabled]="isRegistered()">Register</button>
   </div>
 </form>
+@if (isRegistered()) {
+<div>
+  <p>You are already registered{{ isVerified() ? ' and verified.' : ', but not verified.' }}</p>
+</div>
+}
