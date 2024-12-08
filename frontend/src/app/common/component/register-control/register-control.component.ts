@@ -27,8 +27,7 @@ export class RegisterControlComponent implements OnInit {
 
   constructor(
     private ethereumService: EthereumService,
-  ) {
-  }
+  ) { }
 
   async ngOnInit() {
     this.isRegistered.set(await this.ethereumService.isRegistered());
