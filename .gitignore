@@ -1,5 +1,6 @@
-frontend/addresses.json
-frontend/artifacts
+frontend/src/contracts/*
+frontend/src/assets/addresses/*
+frontend/src/assets/contracts/*
 
 .deps/
 
