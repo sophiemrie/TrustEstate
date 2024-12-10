@@ -22,7 +22,7 @@ describe("DIDRegistry", function () {
 
   describe("DID Registration", function () {
     it("Should register a new DID", async function () {
-      await expect(registry.register(testDID, testDocument))
+      await expect(registry.register(testDID, testDocument, true))
         .to.emit(registry, "DIDRegistered")
         .withArgs(testDID, owner.address);
 
@@ -31,16 +31,16 @@ describe("DIDRegistry", function () {
     });
 
     it("Should not allow registering the same DID twice", async function () {
-      await registry.register(testDID, testDocument);
+      await registry.register(testDID, testDocument, true);
       await expect(
-        registry.register(testDID, testDocument)
+        registry.register(testDID, testDocument, true)
       ).to.be.revertedWith("DID already registered");
     });
   });
 
   describe("DID Document Updates", function () {
     beforeEach(async function () {
-      await registry.register(testDID, testDocument);
+      await registry.register(testDID, testDocument, true);
     });
 
     it("Should update DID document", async function () {
@@ -59,7 +59,7 @@ describe("DIDRegistry", function () {
 
   describe("Verifiable Credentials", function () {
     beforeEach(async function () {
-      await registry.register(testDID, testDocument);
+      await registry.register(testDID, testDocument, true);
     });
 
     it("Should add a verifiable credential", async function () {
@@ -97,7 +97,7 @@ describe("DIDRegistry", function () {
     });
 
     it("Should return true for registered DID", async function () {
-      await registry.register(testDID, testDocument);
+      await registry.register(testDID, testDocument, true);
       const isValid = await registry.verify(testDID);
       expect(isValid).to.be.true;
     });

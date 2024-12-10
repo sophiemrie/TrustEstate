@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "./DIDRegistry.sol";
-import "hardhat/console.sol"; // FIXME: Remove
 
 contract TrustEstate {
     struct Ownership {
@@ -152,7 +151,6 @@ contract TrustEstate {
         require(_plots[plotId].exists, "Transfer for nonexistent token");
         require(_isOwner(plotId, msg.sender), "Not an owner");
         uint256 shareOfCurrentOwner = _getShare(plotId, msg.sender);
-        console.log("shareOfCurrentOwner", shareOfCurrentOwner, amount);
         require(shareOfCurrentOwner >= amount, "Not enough shares");
         require(_plots[plotId].allowIndividualTransfer, "Plot is not allowed to be individually transferred");
         require(didRegistry.verify(dids[to]), "Invalid DID");
@@ -269,19 +267,13 @@ contract TrustEstate {
             }
         }
         if (canExecute) {
-            executeProposal(proposalId);
+            _executeProposal(proposalId);
         }
     }
 
-    function executeProposal(uint256 proposalId) public {
+    function _executeProposal(uint256 proposalId) internal {
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.executed, "Proposal already executed");
-
-        for (uint256 i = 0; i < proposal.hasToApprove.length; i++) {
-            if (!_contains(proposal.approvers, proposal.hasToApprove[i])) {
-                revert("Not all owners have approved");
-            }
-        }
 
         if (proposal.proposalType == ProposalType.Split) {
             SplitProposalData memory splitData = abi.decode(proposal.proposalData, (SplitProposalData));

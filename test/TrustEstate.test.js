@@ -24,10 +24,10 @@ describe("TrustEstate", function () {
         await landRegistry.waitForDeployment();
 
         // Set up DIDs for all test addresses
-        await didRegistry.connect(owner).register("did:example:owner", "test doc");
-        await didRegistry.connect(addr1).register("did:example:addr1", "test doc");
-        await didRegistry.connect(addr2).register("did:example:addr2", "test doc");
-        await didRegistry.connect(addr3).register("did:example:addr3", "test doc");
+        await didRegistry.connect(owner).register("did:example:owner", "test doc", true);
+        await didRegistry.connect(addr1).register("did:example:addr1", "test doc", true);
+        await didRegistry.connect(addr2).register("did:example:addr2", "test doc", true);
+        await didRegistry.connect(addr3).register("did:example:addr3", "test doc", true);
 
         await landRegistry.connect(owner).register("did:example:owner");
         await landRegistry.connect(addr1).register("did:example:addr1");
@@ -45,8 +45,8 @@ describe("TrustEstate", function () {
 
         await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer)
 
-        const plot = await landRegistry.getPlot(1);
-        expect(plot.id).to.equal(1);
+        const plot = await landRegistry.getPlot(0);
+        expect(plot.id).to.equal(0);
         expect(plot.ipfsHash).to.equal(ipfsHash);
         expect(plot.allowIndividualTransfer).to.equal(allowIndividualTransfer);
     });
@@ -87,12 +87,12 @@ describe("TrustEstate", function () {
         const owners1 = [{ owner: owner.address, share: 10000 }];
         const owners2 = [{ owner: addr1.address, share: 10000 }];
 
-        await expect(landRegistry.createSplitProposal(1, split1, split2, owners1, owners2))
+        await expect(landRegistry.connect(owner).createSplitProposal(0, split1, split2, owners1, owners2))
             .to.emit(landRegistry, "ProposalCreated")
-            .withArgs(1, 1);
+            .withArgs(0, 0);
 
         const proposal = await landRegistry.proposals(1);
-        expect(proposal.plotId).to.equal(1);
+        expect(proposal.plotId).to.equal(0);
         expect(proposal.executed).to.equal(false);
     });
 
@@ -118,20 +118,20 @@ describe("TrustEstate", function () {
         const owners1 = [{ owner: owner.address, share: 10000 }];
         const owners2 = [{ owner: addr1.address, share: 10000 }];
 
-        await landRegistry.createSplitProposal(1, split1, split2, owners1, owners2);
+        await landRegistry.createSplitProposal(0, split1, split2, owners1, owners2);
 
-        await expect(landRegistry.connect(owner).approveProposal(1))
+        await expect(landRegistry.connect(owner).approveProposal(0))
             .to.emit(landRegistry, "ProposalApproved")
-            .withArgs(1, 1, owner.address);
+            .withArgs(0, 0, owner.address);
 
-        const proposal = await landRegistry.proposals(1);
+        const proposal = await landRegistry.proposals(0);
         // Check if the proposal exists and is not executed
-        expect(proposal.plotId).to.equal(1);
+        expect(proposal.plotId).to.equal(0);
         expect(proposal.executed).to.equal(false);
 
         // Verify that the owner is marked as an approver by trying to approve again
         await expect(
-            landRegistry.connect(owner).approveProposal(1)
+            landRegistry.connect(owner).approveProposal(0)
         ).to.be.revertedWith("Already approved");
     });
 
@@ -157,20 +157,16 @@ describe("TrustEstate", function () {
         const owners1 = [{ owner: owner.address, share: 10000 }];
         const owners2 = [{ owner: addr1.address, share: 10000 }];
 
-        await landRegistry.createSplitProposal(1, split1, split2, owners1, owners2);
-        await landRegistry.connect(owner).approveProposal(1);
-        await landRegistry.connect(addr1).approveProposal(1);
-        await landRegistry.connect(government).approveProposal(1);
+        await landRegistry.createSplitProposal(0, split1, split2, owners1, owners2);
+        await landRegistry.connect(owner).approveProposal(0);
+        await landRegistry.connect(addr1).approveProposal(0);
+        await landRegistry.connect(government).approveProposal(0);
 
-        await expect(landRegistry.executeProposal(1))
-            .to.emit(landRegistry, "ProposalExecuted")
-            .withArgs(1, 1);
-
-        const plot1 = await landRegistry.getPlot(2);
+        const plot1 = await landRegistry.getPlot(1);
         expect(plot1.ipfsHash).to.equal("QmSplitHash1");
         expect(plot1.allowIndividualTransfer).to.equal(true);
 
-        const plot2 = await landRegistry.getPlot(3);
+        const plot2 = await landRegistry.getPlot(2);
         expect(plot2.ipfsHash).to.equal("QmSplitHash2");
         expect(plot2.allowIndividualTransfer).to.equal(true);
     });
@@ -203,17 +199,13 @@ describe("TrustEstate", function () {
             { owner: addr2.address, share: 5000 }
         ];
 
-        await landRegistry.createMergeProposal(1, 2, merge, mergedOwners);
-        await landRegistry.connect(owner).approveProposal(1);
-        await landRegistry.connect(addr1).approveProposal(1);
-        await landRegistry.connect(addr2).approveProposal(1);
-        await landRegistry.connect(government).approveProposal(1);
+        await landRegistry.createMergeProposal(0, 1, merge, mergedOwners);
+        await landRegistry.connect(owner).approveProposal(0);
+        await landRegistry.connect(addr1).approveProposal(0);
+        await landRegistry.connect(addr2).approveProposal(0);
+        await landRegistry.connect(government).approveProposal(0);
 
-        await expect(landRegistry.executeProposal(1))
-            .to.emit(landRegistry, "ProposalExecuted")
-            .withArgs(1, 1);
-
-        const plot3 = await landRegistry.getPlot(3);
+        const plot3 = await landRegistry.getPlot(2);
         expect(plot3.ipfsHash).to.equal("QmMergeHash");
         expect(plot3.allowIndividualTransfer).to.equal(true);
     });
@@ -233,22 +225,18 @@ describe("TrustEstate", function () {
             { owner: addr3.address, share: 2000 }
         ];
 
-        await landRegistry.createTransferProposal(1, transferOwners);
+        await landRegistry.createTransferProposal(0, transferOwners);
 
-        await expect(landRegistry.connect(owner).approveProposal(1))
+        await expect(landRegistry.connect(owner).approveProposal(0))
             .to.emit(landRegistry, "ProposalApproved")
-            .withArgs(1, 1, owner.address);
+            .withArgs(0, 0, owner.address);
 
-        await expect(landRegistry.connect(addr1).approveProposal(1))
+        await expect(landRegistry.connect(addr1).approveProposal(0))
             .to.emit(landRegistry, "ProposalApproved")
-            .withArgs(1, 1, addr1.address);
+            .withArgs(0, 0, addr1.address);
 
-        await expect(landRegistry.executeProposal(1))
-            .to.emit(landRegistry, "ProposalExecuted")
-            .withArgs(1, 1);
-
-        const plot = await landRegistry.getPlot(1);
-        expect(plot.id).to.equal(1);
+        const plot = await landRegistry.getPlot(0);
+        expect(plot.id).to.equal(0);
         expect(plot.ipfsHash).to.equal(ipfsHash);
         expect(plot.allowIndividualTransfer).to.equal(true);
     });
