@@ -240,4 +240,35 @@ describe("TrustEstate", function () {
         expect(plot.ipfsHash).to.equal(ipfsHash);
         expect(plot.allowIndividualTransfer).to.equal(true);
     });
+
+    it("Should allow a plot owner to transfer ownership share", async () => {
+        const owners = [
+            { owner: owner.address, share: 6000 },
+            { owner: addr1.address, share: 4000 }
+        ];
+        const ipfsHash = "QmTestHash12345";
+        const allowIndividualTransfer = true;
+
+        // Mint a new plot with initial ownership
+        await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer);
+
+        // Owner transfers 2000 shares to addr2
+        const transferAmount = 2000;
+        await landRegistry.connect(owner).transferOwnershipShare(addr2.address, 0, transferAmount);
+
+        // Verify updated ownership shares
+        const ownerships = await landRegistry.getOwnership(0);
+
+        // Check that owner has reduced shares
+        expect(ownerships[0].owner).to.equal(owner.address);
+        expect(ownerships[0].share).to.equal(4000);
+
+        // Check that addr1 remains the same
+        expect(ownerships[1].owner).to.equal(addr1.address);
+        expect(ownerships[1].share).to.equal(4000);
+
+        // Check that addr2 received the transferred shares
+        expect(ownerships[2].owner).to.equal(addr2.address);
+        expect(ownerships[2].share).to.equal(2000);
+    });
 });
