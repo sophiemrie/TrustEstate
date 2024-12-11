@@ -1,11 +1,10 @@
 <div class="container">
-  <form>
-    <mat-form-field appearance="outline">
+  <form class="searchbar">
+    <mat-form-field appearance="outline" class="searchbar">
       <mat-label>Plot ID</mat-label>
-      <input type="number" matInput [formControl]="plotFormControl">
+      <input type="number" matInput class="searchbar" (input)="onPlotChange($event)">
     </mat-form-field>
   </form>
-  <button mat-flat-button color="primary" (click)="getPlot()">Submit</button>
 </div>
 @if (plot() !== undefined && owners() !== undefined) {
   <app-plot-card [plot]="plot()!" [owners]="owners()!"></app-plot-card>
