@@ -12,7 +12,7 @@ async function main() {
     console.log("DIDRegistry deployed to:", await didRegistry.getAddress());
 
     // Deploy TrustEstate contract
-    const [government, owner, addr1, addr2, addr3] = await ethers.getSigners();
+    const [government, addr1, addr2, unregistered, addr4] = await ethers.getSigners();
     const TrustEstate = await ethers.getContractFactory("TrustEstate");
     const landRegistry = await TrustEstate.deploy(
         "TrustEstate",
@@ -25,16 +25,16 @@ async function main() {
 
     // Register DIDs for test addresses
     console.log("Registering DIDs...");
-    await didRegistry.connect(owner).register("did:example:owner", "test doc", true);
     await didRegistry.connect(addr1).register("did:example:addr1", "test doc", true);
     await didRegistry.connect(addr2).register("did:example:addr2", "test doc", true);
-    await didRegistry.connect(addr3).register("did:example:addr3", "test doc", false);
+    await didRegistry.connect(unregistered).register("did:example:addr3", "test doc", true);
+    await didRegistry.connect(addr4).register("did:example:addr4", "test doc", false);
 
     console.log("Linking DIDs to TrustEstate...");
-    await landRegistry.connect(owner).register("did:example:owner");
     await landRegistry.connect(addr1).register("did:example:addr1");
-    // await landRegistry.connect(addr2).register("did:example:addr2");
-    await landRegistry.connect(addr3).register("did:example:addr3");
+    await landRegistry.connect(addr2).register("did:example:addr2");
+    // await landRegistry.connect(unregistered).register("did:example:addr2");
+    await landRegistry.connect(addr4).register("did:example:addr3");
 
     // Save the deployed addresses and ABIs
     await saveContractData("DIDRegistry", didRegistry);
@@ -43,30 +43,32 @@ async function main() {
 
     // Create Test data
     const owners = [
-        { owner: owner.address, share: 6000 },
-        { owner: addr1.address, share: 4000 }
+        { owner: addr1.address, share: 6000 },
+        { owner: addr2.address, share: 4000 }
     ];
-    const ipfsHash = "QmTestHash12345";
+    const ipfsHash = "QmQSmPT19vToe8vfcyxKfQgeGDfNDzYGAqVMJQujuzKNk2";
     const allowIndividualTransfer = true;
 
     await landRegistry.connect(government).mintPlot(owners, ipfsHash, allowIndividualTransfer)
 
     const split1 = {
-        ipfsHash: "QmSplitHash1",
+        ipfsHash: "QmQSmPT19vToe8vfcyxKfQgeGDfNDzYGAqVMJQujuzKNk2",
         allowIndividualTransfer: true
     };
     const split2 = {
-        ipfsHash: "QmSplitHash2",
+        ipfsHash: "QmQSmPT19vToe8vfcyxKfQgeGDfNDzYGAqVMJQujuzKNk2",
         allowIndividualTransfer: true
     };
 
-    const owners1 = [{ owner: owner.address, share: 10000 }];
-    const owners2 = [{ owner: addr1.address, share: 10000 }];
+    const owners1 = [{ owner: addr1.address, share: 10000 }];
+    const owners2 = [{ owner: addr2.address, share: 10000 }];
 
-    await landRegistry.connect(addr1).createSplitProposal(0, split1, split2, owners1, owners2);
-    await landRegistry.connect(addr1).createSplitProposal(0, split1, split2, owners1, owners2);
-    await landRegistry.connect(addr1).createSplitProposal(0, split1, split2, owners1, owners2);
-    await landRegistry.connect(addr1).createSplitProposal(0, split1, split2, owners1, owners2);
+    await landRegistry.connect(addr2).createSplitProposal(0, split1, split2, owners1, owners2);
+    await landRegistry.connect(government).approveProposal(0);
+    await landRegistry.connect(addr2).approveProposal(0);
+    // await landRegistry.connect(addr2).createSplitProposal(0, split1, split2, owners1, owners2);
+    // await landRegistry.connect(addr2).createSplitProposal(0, split1, split2, owners1, owners2);
+    // await landRegistry.connect(addr2).createSplitProposal(0, split1, split2, owners1, owners2);
 
     console.log("Deployment and setup complete!");
 
