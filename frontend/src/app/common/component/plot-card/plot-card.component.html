@@ -1,17 +1,17 @@
 <mat-card appearance="outlined" class="card">
   <mat-card-header>
-    <mat-card-title>Plot {{plot().id}}</mat-card-title>
-    <mat-card-subtitle>Owner: </mat-card-subtitle>
+    <mat-card-title>Plot: {{plot().id}}</mat-card-title>
   </mat-card-header>
   <mat-card-content>
-    <p>IPFS Hash: {{plot().ipfsHash}}</p>
-    <p>Allow Individual Transfer:
-    @if (plot().allowIndividualTransfer) {
+    <p>IPFS Hash: <a mat-button href="https://ipfs.io/ipfs/{{plot().ipfsHash}}" target="_blank">{{plot().ipfsHash}}</a></p>
+    <div class="individual-transfer">
+      <p>Individual Transfer allowed:</p>
+      @if (plot().allowIndividualTransfer) {
       <mat-icon>check_circle</mat-icon>
-    } @else {
+      } @else {
       <mat-icon>cancel</mat-icon>
-    }
-    </p>
+      }
+    </div>
 
     <app-plot-owners-table [owners]="owners()" [plotId]="plot().id" [allowIndividualTransfer]="plot().allowIndividualTransfer"></app-plot-owners-table>
   </mat-card-content>
