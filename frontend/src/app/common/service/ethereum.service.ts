@@ -124,7 +124,7 @@ export class EthereumService {
   async mintPlot(owners: Ownership[], ipfsHash: string, allowIndividualTransfer: boolean): Promise<void> {
     await this.ensureInitialized();
     if (this.contract === undefined) throw new Error("Contract not initialized");
-    await this.contract.methods.mintPlot(owners, ipfsHash, allowIndividualTransfer)
+    await this.contract.methods.mintPlot(owners, ipfsHash, allowIndividualTransfer).send({from: this.accounts[0]});
   }
 
   async isVerified(): Promise<boolean> {

@@ -38,13 +38,12 @@ export class MintPlotControlComponent {
   ) { }
 
   async mintPlot() {
-    console.log(this.owners());
-    console.log(this.form.value);
     const owners = this.owners();
 
     if (owners.length === 0) return;
     if (!this.form.value.ipfsHash) return;
-    if (!this.form.value.allowIndividualTransfer) return;
+    if (this.form.value.allowIndividualTransfer === null ||
+        this.form.value.allowIndividualTransfer === undefined) return;
 
     await this.ethereumService.mintPlot(this.owners(), this.form.value.ipfsHash, this.form.value.allowIndividualTransfer);
     this.form.reset();
