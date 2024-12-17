@@ -1,5 +1,4 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require("fs"); const path = require("path");
 const { ethers } = require("hardhat");
 
 async function main() {
@@ -33,8 +32,8 @@ async function main() {
     console.log("Linking DIDs to TrustEstate...");
     await landRegistry.connect(addr1).register("did:example:addr1");
     await landRegistry.connect(addr2).register("did:example:addr2");
-    // await landRegistry.connect(unregistered).register("did:example:addr2");
-    await landRegistry.connect(addr4).register("did:example:addr3");
+    await landRegistry.connect(unregistered).register("did:example:addr3");
+    await landRegistry.connect(addr4).register("did:example:addr4");
 
     // Save the deployed addresses and ABIs
     await saveContractData("DIDRegistry", didRegistry);
@@ -57,13 +56,15 @@ async function main() {
     };
     const split2 = {
         ipfsHash: "QmQSmPT19vToe8vfcyxKfQgeGDfNDzYGAqVMJQujuzKNk2",
-        allowIndividualTransfer: true
+        allowIndividualTransfer: false
     };
 
     const owners1 = [{ owner: addr1.address, share: 10000 }];
     const owners2 = [{ owner: addr2.address, share: 10000 }];
 
+    console.log("creating split proposal")
     await landRegistry.connect(addr2).createSplitProposal(0, split1, split2, owners1, owners2);
+    console.log("split proposal created")
     await landRegistry.connect(government).approveProposal(0);
     await landRegistry.connect(addr2).approveProposal(0);
     // await landRegistry.connect(addr2).createSplitProposal(0, split1, split2, owners1, owners2);
